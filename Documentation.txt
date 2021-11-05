@@ -1,0 +1,281 @@
+###---------------- A) Overview --------------------- ###
+Consists of 3 modules: 1) Data loading, 2) Data Pre-processing, 3) ML
+
+Framework will load the json data in the data loading module, followed by data preprocessing to clean and remove noise from the text data. With the cleaned data, user can choose to use 
+a) unsupervised learning if user wants to classify text data into clusters/groups. Similar texts will be classified into the same cluster. Output will return the text and the cluster number that
+   corresponds to the text. Methods that are available: K-means clustering (default), Latent Dirichlet Allocation (optional), Non Negative Matrix Factorization(optional)
+
+b) supervised learning if the data has a target/label for prediction. The text data will be split into train and test. Model building will be done using the train data according to the algorithm
+   chosen and evaluated on the test data. Output will return the overall accuracy/classification report(i.e. precision,support,recall,f1-score)/confusion matrix. Algorithms that are available:
+   Random Forest(default), Support Vector Machine(optional), Naive Bayes(optional)
+
+c) similarity metrics if user wants to compare the similarity between texts. Methods that are available: Cosine Similarity(default), Jaccard Similarity(optional)
+
+To add: paths for data loading/output for user/output for elk
+-> supervised -> user
+->simi -> user
+-> unsuper -> ELK
+           -> user
+
+###---------------- B) Details on modules and parameters used ---------------------###
+
+#------1) Data Loading Module------#
+Load only json files that follow the agreed filename format, merge files as single dataframe. User can choose to 
+    a) Load all json files following the agreed filename format
+    b) Load only json files from specific dates by adding the start and stop dates (Note: Both start_date and
+    stop_date must be used together)
+    
+    params:
+    path [string]: path of the files, without filename
+    
+    start_date[None/string in YYYY-MM-DD format](optional,default is None): 
+    User can choose to load files starting from start_date
+    - None: no start_date is provided, all files are loaded
+    - string in YYYY-MM-DD format: files starting from start_date will be loaded
+    
+    stop_date[None/string in YYYY-MM-DD format](optional,default is None): 
+    User can choose to load files until stop_date
+    - None: no stop_date is provided, all files are loaded
+    - string in YYYY-MM-DD format: files until stop_date will be loaded
+
+
+#------2) Data Preprocessing Module------#
+Remove noise and clean the text data. Consists of dataframe manipulation, text normalization, noise filtering, feature extraction
+
+Functions available in the module:
+a) DataFrame Manipulation
+    Function: df_manipulation
+    1) Column selection: Keep or drop columns in dataframe
+    2) Data impute: Impute or drop NA rows 
+    3) Data duplication cleaning: Drop all duplicates or drop all duplicates except for the first/last occurrence
+
+    params:
+    df [dataframe]: input dataframe 
+    cols_tokeep [list/None]: list of columns to keep, if there is no list use None
+    cols_todrop [list/None]: list of columns to drop, if there is no list use None
+    impute_value [string/None]: value to be imputed (i.e "" for empty string). If no value to be imputed but there are 
+                        rows to be dropped use None
+    how[string]: Drop rows when we have at least one NA or all NA. Choose
+                      # - "all": Drop row with all NA
+                      # - "any": Drop row with at least one NA
+                  
+    subset[list/None]: Subset of columns for dropping NA and identifying duplicates, use None if no column to select
+    keep[string/False]: Choose to drop all duplicates or drop all duplicates except for the first/last occurrence
+                        # - "first" : Drop duplicates except for the first occurrence. 
+                        # - "last" : Drop duplicates except for the last occurrence. 
+                        # - False : Drop all duplicates.
+
+b) Text Normalization
+
+i) Function 1: word_contractions
+   Expand word contractions (i.e. "isn't" to "is not")
+    params:
+    text[string]: input string 
+
+ii) Function 2: lowercase
+    Convert all characters to lower case
+     params:
+     text[string]: input string 
+
+iii) Function 3: stem_words
+    Stemming words. Default option is Porter Stemmer, alternative option is Lancaster Stemmer 
+    params:
+    text[string]: input string 
+    stemmer_type[None/string]: input stemming method 
+                                - None for Porter Stemmer
+                                - "Lancaster" for Lancaster Stemmer 
+
+iv) Function 4: lemmatize_words
+    Lemmatize words: Default option is WordNetLemmatizer, alternative option is Spacy 
+    params:
+    column[series]: input series/column to be lemmatized
+    lemma_type[None/string]: input lemmatization method
+                            - None for WordNetLemmatizer
+                            - "Spacy" for Spacy    
+
+c) Noise filtering
+i) Function 1: remove_htmltag_url
+   Remove html tag and url
+    params:
+    text [string]: input string
+
+ii) Function 2: remove_irrchar_punc
+    Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex format.    
+    params:    
+    text[string]: input string 
+    characters[string]: input regex of characters to be removed
+
+iii)Function 3: remove_num
+    Remove numeric data
+    params:
+    text[string]: input string
+
+iv) Function 4: remove_multwhitespace
+    Remove multiple white spaces
+    params:
+    text[string]: input string 
+
+v) Function 5: remove_stopwords
+    Removes English stopwords. Optional: user can add own stopwords or remove words from English stopwords  
+    params:
+    text[string]: input string
+    extra_sw [list] (optional): list of words/phrase to be added to the stop words 
+    remove_sw [list] (optional): list of words to be removed from the stop words 
+
+vi) Function 6: remove_freqwords
+    Remove n frequent words
+    params:
+    column[series]: input column to remove frequent words
+    n [integer]: input number of frequent words to be removed
+
+vii) Function 7: remove_rarewords
+    Remove n rare words
+    params:
+    column[series]: input column to remove rare words
+    n [integer]: input number of rare words to be removed
+
+viii) Function 8: custom_taxo
+    User provides taxonomy to be removed or remained in the text
+    params:
+    text[string]: text to remove/maintain the taxonomy
+    remove_taxo[list]: list of taxonomy to be removed from text
+    include_taxo[list]: list of taxonomy to be maintained in text
+
+d) Feature Extraction
+    Function: feature_extraction
+    Feature extraction methods - TF-IDF(default choice) or Bag of words
+     
+    params:
+    column [series/DataFrame]: column selected for feature extraction 
+                        - series: only one column is selected for feature extraction (e.g. df["title_clean"])
+                        - DataFrame: more than one column is selected for feature extraction (e.g. df[["title_clean","desc_clean"]])
+    ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - [default] ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
+                                 - True(words arranged in ascending order of sum), 
+                                 - False(words arranged in descending order of sum)                               
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
+
+
+#------3) ML Module------#
+Consists of unsupervised learning, supervised learning and similarity metric methods.
+
+a) Unsupervised learning
+i) Function 1: kmeans_clustering (default method)
+   K- means clustering for unsupervised learning. User can choose either options:
+    (1) provide the number of clusters or
+    (2) provide the max number of clusters for kmeans to iterate through, the optimal number of clusters with highest 
+    silhouette score will be chosen. Min number of clusters is fixed as 2
+    
+    params:
+    X[sparse matrix]: sparse matrix obtained from feature extraction function
+    vec_type: vec_type obtained from feature extraction function
+    top_n_terms[int]: the top n terms in each cluster to be printed out
+    n_clusters[None/int]: number of clusters. Choose None for option (2)  
+    max_n_clusters[None/int]: max number of clusters. Choose None for option (1)  
+
+ii) Function 2: lda (optional)
+    LDA for unsupervised learning. Select "bagofwords" for feature extraction
+    params:
+    vectorized: vectorized obtained from feature extraction function
+    vec_type: vec_type obtained from from feature extraction function
+    n_components[int]: the number of topics/clusters used in the lda_model
+    top_n_terms[int]: the top n terms in each topic/cluster to be printed out
+
+iii) Function 3: nmf (optional)  
+    Non-negative matrix factorization for unsupervised learning.
+    params:
+    vectorized: vectorized obtained from feature extraction function
+    vec_type: vec_type obtained from from feature extraction function
+    n_components[int]: the number of topics/clusters used in NMF
+    top_n_terms[int]: the top n terms in each topic/cluster to be printed out
+
+b) Supervised learning
+i) Function 1: supervised_lng
+   Consists of 3 supervised machine learning methods: RandomForest (Default), Naive Bayes(optional, SVM (optional)
+    X[series]: text data
+    y[series]: target 
+    test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. 
+                          If int, represents the absolute number of test samples.
+    ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string]: Feature extraction type: Choose "bagofwords" or "tfidf" method
+    model_type[None/string]: Choose ML algorithm 
+                            - None (Default algorithm is Random Forest)
+                            - 'NB'(To choose Naive Bayes as ML algorithm), 
+                            - 'SVM'(To choose Support Vector Machine as ML algorithm)
+    ascend[True/False/None]:  - None (Default: Confusion matrix is arranged in alphabetical order)
+                              - True(Confusion matrix arranged in ascending order of accuracy % per label), 
+                              - False(Confusion matrix arranged in descending order of accuracy % per label)  
+    save_path[None/string]: Path to save model
+                            - None (Default - Model is not saved)
+                            - String (Model is saved as model.joblib in the save_path specified as a string)
+
+ii) Function 2: deep_lng
+    Deep learning method: MultiLayer Perceptron
+
+    X[series]: text data
+    y[series]: target
+    test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. 
+                          If int, represents the absolute number of test samples.
+    ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string]: Feature extraction type: Choose "bagofwords" or "tfidf" method
+    hidden_layer_sizes[tuple],default = (100): To set the number of layers and the number of nodes.
+                                               Each element in the tuple represents the number of nodes,
+                                               length of tuple denotes the total number of hidden layers in the network
+    activation["identity", "logistic", "tanh","relu"], default="relu": Activation function for the hidden layer.
+    solver["lbfgs", "sgd", "adam"], default="adam": The solver for weight optimization.
+    learning_rate["constant", "invscaling", "adaptive"], default="constant": Learning rate schedule for weight updates
+    max_iter[int], default=200: Maximum number of iterations. The solver iterates until convergence or this number of iterations.
+    ascend [True/False/None]: - None (Default: Confusion matrix is arranged in alphabetical order)
+                                 - True(Confusion matrix arranged in ascending order of accuracy % per label), 
+                                 - False(Confusion matrix arranged in descending order of accuracy % per label)                            
+    save_path[None/string]: Path to save model
+                            - None (Default - Model is not saved)
+                            - String (Model is saved as model.joblib in the save_path specified as a string)   
+
+c) Similarity Metrics
+i) Function 1: cosinesimilarity
+   Compute the cosine similarity between texts. User can 
+    a) fix number of rows for comparison, each row will be taken as base and compared with the rest
+    b) fix one row as base, comparison will be done with all the other rows
+    
+    params:
+    column[series]: text data
+    threshold[None/float]: cut off value for the cosine similarity, only texts with values above or equal to threshold
+                           will be printed
+                        - None: Default threhold is 0.5
+                        - float: any value between 0 and 1 
+    total_rows[None/int]: Number of rows for comparison, choose None for option b 
+    base_row[None/int]: Row fixed as base, choose None for option a 
+    ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[None/string]: Feature extraction type: Choose "bagofwords" or None for tfidf
+    ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
+                                 - True(words arranged in ascending order of sum), 
+                                 - False(words arranged in descending order of sum)  
+ii) Function 2: jaccard_similarity
+    Compute the jaccard similarity between texts. User can 
+    a) fix number of rows for comparison, each row will be taken as base and compared with the rest
+    b) fix one row as base, comparison will be done with all the other rows
+    
+    params:
+    column[series]: text data
+    threshold[None/float]: cut off value for the jaccard similarity, only texts with values above or equal to threshold
+                           will be printed
+                        - None: Default threhold is 0.5
+                        - float: any value between 0 and 1 
+    total_rows[None/int]: Number of rows for comparison, choose None for option b 
+    base_row[None/int]: Row fixed as base, choose None for option a 
+    ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
+                                 - True(words arranged in ascending order of sum), 
+                                 - False(words arranged in descending order of sum)  
