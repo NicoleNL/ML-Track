@@ -4,6 +4,7 @@ import logging
 from dataloading import data_loading
 from datapreprocessing import df_manipulation,word_contractions,lowercase,remove_htmltag_url,remove_irrchar_punc,remove_num,remove_multwhitespace,remove_stopwords,remove_freqwords,remove_rarewords
 from datapreprocessing import custom_taxo,stem_words,lemmatize_words,feature_extraction
+from mlmodule import kmeans_clustering,lda,nmf,supervised_lng,deep_lng,cosinesimilarity,jaccardsimilarity
 
 # #SUBJECT TO CHANGE    
 # json_path ='C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/'
