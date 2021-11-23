@@ -1,0 +1,142 @@
+{
+        "Email": "abc@intel.com",
+        "user_outpath": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/user_outpath/",
+        "log_path": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/user_outpath/",
+        "DataLoading": {
+                "path": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/General/Sample json output/HSD ES Raw Data/team1/",
+                "start_date": null,
+                "stop_date": null
+        },
+        "DataPreprocessing": {
+                "df_manipulation": {
+                        "how": null,
+                        "col_selection": [
+                                "id",
+                                "description"
+                        ],
+                        "keep": null,
+                        "subset": null
+                },
+                "target": {
+                        "enable": false,
+                        "column": "problem_area"
+                },
+                "word_contractions": {
+                        "enable": true
+                },
+                "lowercase": {
+                        "enable": true
+                },
+                "remove_htmltag_url": {
+                        "enable": true
+                },
+                "remove_irrchar_punc": {
+                        "enable": true,
+                        "char": null
+                },
+                "remove_num": {
+                        "enable": true
+                },
+                "remove_multwhitespace": {
+                        "enable": true
+                },
+                "remove_stopwords": {
+                        "enable": true,
+                        "extra_sw": null,
+                        "remove_sw": null
+                },
+                "remove_freqwords": {
+                        "enable": true,
+                        "n": 10
+                },
+                "remove_rarewords": {
+                        "enable": true,
+                        "n": 10
+                },
+                "custom_taxo": {
+                        "enable": true,
+                        "remove_taxo": "test \\w+",
+                        "include_taxo": [
+                                "test suite execution"
+                        ]
+                },
+                "stem_words": {
+                        "enable": true,
+                        "stemmer_type": null
+                },
+                "lemmatize_words": {
+                        "enable": false,
+                        "lemma_type": null
+                }
+        },
+        "UnsupervisedLearning": {
+                "Output": {
+                        "User": false,
+                        "ELK": true
+                },
+                "elk_outpath": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/elk_outpath/",
+                "kmeans_clustering": {
+                        "enable": true,
+                        "top_n_terms": 10,
+                        "ngram_range": null,
+                        "fe_type": null,
+                        "n_clusters": null,
+                        "max_n_clusters": 5
+                },
+                "lda": {
+                        "enable": true,
+                        "n_components": 5,
+                        "top_n_terms": 10,
+                        "ngram_range": null
+                },
+                "nmf": {
+                        "enable": true,
+                        "n_components": 5,
+                        "top_n_terms": 10,
+                        "ngram_range": null,
+                        "fe_type": null
+                }
+        },
+        "SupervisedLearning": {
+                "supervised_lng": {
+                        "enable": false,
+                        "target": "problem_area",
+                        "test_size": 0.3,
+                        "ngram_range": null,
+                        "fe_type": null,
+                        "model_type": null,
+                        "ascend": null
+                },
+                "deep_lng": {
+                        "enable": false,
+                        "target": "problem_area",
+                        "test_size": 0.3,
+                        "ngram_range": null,
+                        "fe_type": null,
+                        "hidden_layer_sizes": 5,
+                        "activation": null,
+                        "solver": null,
+                        "learning_rate": null,
+                        "max_iter": null,
+                        "ascend": null
+                }
+        },
+        "SimilarityMetrics": {
+                "cosinesimilarity": {
+                        "enable": true,
+                        "threshold": 0,
+                        "total_rows": 10,
+                        "base_row": null,
+                        "ngram_range": null,
+                        "fe_type": null,
+                        "ascending": null
+                },
+                "jaccardsimilarity": {
+                        "enable": true,
+                        "threshold": 0,
+                        "total_rows": 10,
+                        "base_row": null,
+                        "ascending": null
+                }
+        }
+}
