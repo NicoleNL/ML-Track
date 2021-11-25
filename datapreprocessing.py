@@ -13,14 +13,18 @@ logger = logging.getLogger("MLTrack")
 
 
 #data preprocessing
-def df_manipulation(df,col_selection=None,keep=None,subset=None):
+def df_manipulation(df,how=None,col_selection=None,keep=None,subset=None):
     """
     1) Column selection: Keep columns in dataframe
     2) Data impute: Impute NA rows with empty string
     3) Data duplication cleaning: Drop all duplicates or drop all duplicates except for the first/last occurrence
     
     params:
-    df [dataframe]: input dataframe     
+    df [dataframe]: input dataframe  
+    how[None/string]: Drop rows when we have at least one NA or all NA. Choose
+                      # - None : NA imputed with empty string
+                      # - "all": Drop row with all NA
+                      # - "any": Drop row with at least one NA
     col_selection [None/list]: - None [Default]: Keep all columns in dataframe 
                                - List: List of columns to keep in dataframe                      
                                  
@@ -28,10 +32,11 @@ def df_manipulation(df,col_selection=None,keep=None,subset=None):
                       # - None[DEFAULT] : Drop duplicates except for the first occurrence. 
                       # - "last" : Drop duplicates except for the last occurrence. 
                       # - False : Drop all duplicates.                 
-    subset[list/None]: Subset of columns for identifying duplicates, use None if no column to select
+    subset[list/None]: list: Subset of columns for dropping NA and identifying duplicates, 
+                       None[DEFAULT]: if no column to select
    
     """
-    logger.info("df_manipulation starts")
+    
     logger.info("Shape of df before manipulation: %s",df.shape)
 
     #Column selection - user can select column(s) 
@@ -41,26 +46,33 @@ def df_manipulation(df,col_selection=None,keep=None,subset=None):
     logger.info("Shape of df after selecting columns: %s",df.shape)
 
     #---Data impute - user can impute or drop rows with NA,freq of null values before & after manipulation returned---#
-    logger.info("Number of null values in df:\n",df.isnull().sum())
-  
+    logger.info("Number of null values in df:\n %s",df.isnull().sum())         
+    
+    if how == None: # impute NA values with empty string
+        logger.info("NA is imputed with empty string")
+        impute_value = ""
+        df = df.fillna(impute_value)
+        logger.info("Number of null values in df after NA imputation:\n %s",df.isnull().sum())        
+    else: # drop rows with NA values
+        logger.info("NA is dropped")
+        df= df.dropna(axis=0, how=how,subset=subset)
+        logger.info("Number of null values in df after dropping NA rows:\n %s",df.isnull().sum())
+        logger.info("Shape of df after dropping NA rows:%s",df.shape)
 
-    # impute NA values with empty string
-    impute_value = ""
-    df = df.fillna(impute_value)
-    logger.info("Number of null values in df after NA imputation:\n %s",df.isnull().sum())
-       
+
     #---------Data duplication cleaning--------#
-    logger.info("Number of duplicates in the df: %s", df.duplicated().sum())
+    logger.info("Number of duplicates in the df:%s", df.duplicated().sum())
 
     #drop duplicates
     if keep==None:
         keep="first"
     df = df.drop_duplicates(subset=subset, keep=keep)
 
-    logger.info("Shape of df after manipulation: %s",df.shape)
-    logger.info("df_manipulation ends")
+    logger.info("Shape of df after manipulation:%s",df.shape)
 
     return df
+       
+    
 
 def word_contractions(df):
     """
@@ -116,7 +128,7 @@ def remove_irrchar_punc(df,char=None):
     format.    
     params:    
     df [dataframe]: input dataframe 
-    characters[string]: input regex of characters to be removed  
+    char[string/None]: input regex of characters to be removed  
     
     """
     logger.info("remove_irrchar_punc starts")
@@ -258,25 +270,50 @@ def remove_rarewords(df,n):
     
     return df
 
-
 def custom_taxo(df,remove_taxo,include_taxo):
     """
-    User provides taxonomy to be removed or remained in the text. 
-    a) user wants to remove taxonomies only -> input a list of taxonomies to be removed in remove_taxo 
+    User provides taxonomy to be removed from the text. 
+    a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
     b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
-    (i.e remove taxo "test" but  "test" remains in "test cycle") -> input a list of taxonomies to be removed in remove_taxo and list of
-    phrases for the taxonomy to remain in include_taxo
+    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies or regex to be removed in remove_taxo 
+    and list of phrases for the taxonomy to remain in include_taxo
     
     params:
     df [dataframe]: input dataframe
-    remove_taxo[list]: list of taxonomy to be removed from text
-    include_taxo[list/None]: list of taxonomy to be maintained in text
+    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
+    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in 
     """
-    logger.info("custom_taxo starts")
     
-    def taxo(text,remove_taxo,include_taxo):
+    import re
+    import pandas as pd 
+    logger.info("custom_taxo starts")
+    def convert(text,remove_taxo):  
+        """
+        Uses regex given in remove_taxo to find and return all matches 
+        """
+        match = re.findall(remove_taxo,text)
+        if match:                 
+            new_row = {'Match':match}
+            return(new_row)
+        
+    #if remove_taxo is regex call convert function to get all matches as a list
+    if type(remove_taxo) == str: 
+        logger.info("User input the regex:",remove_taxo)
+        cv_list = []
+        for i in range(len(df.columns)):
+            for text in df.iloc[:,i]:
+                cv = convert(text,remove_taxo)
+                if cv:
+                    cv_list.append(cv)
+        #             print(cv_list)
+
+        cv_df = pd.DataFrame(cv_list)
+        remove_taxo = list(cv_df["Match"].apply(pd.Series).stack().unique())
+        logger.info("Remove_taxo_list:", remove_taxo)
+        
+    def taxo(text,remove_taxo,include_taxo): 
         if remove_taxo != None and include_taxo != None: #user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases (i.e remove "test" but remain "test" in "test cyccle")
-                        
+
             for w in remove_taxo:
             #row without any item from include_taxo -> replace all remove_taxo items with empty string
                 if all(phrase not in text for phrase in include_taxo): 
@@ -288,18 +325,17 @@ def custom_taxo(df,remove_taxo,include_taxo):
                         pattern = r'\b'+w+r'\b'
                         text = re.sub(pattern,' ', text) 
                         
-            
-                        
-        if remove_taxo != None and include_taxo == None: #user wants to remove taxonomies only:             
-             for w in remove_taxo:
-                 pattern = r'\b'+w+r'\b'
-                 text = re.sub(pattern,' ', text)            
+        if remove_taxo != None and include_taxo == None: #user wants to remove taxonomies only:
+            for w in remove_taxo: #remove_taxo in list of words
+                pattern = r'\b'+w+r'\b'
+                text = re.sub(pattern,' ', text)
                  
         return text 
     
     
-    df = df.applymap(lambda text: taxo(text,remove_taxo,include_taxo))    
+    df = df.applymap(lambda text: taxo(text,remove_taxo,include_taxo))     
     df = df.add_suffix('_taxo')
+     
     if remove_taxo != None and include_taxo != None:
         logger.info("User wants to remove taxonomies but wants the same taxonomy to remain in certain phrases")
         logger.info("Taxonomies removed: %s",remove_taxo)
@@ -309,7 +345,7 @@ def custom_taxo(df,remove_taxo,include_taxo):
         logger.info("Taxonomies removed: %s",remove_taxo)
         
     logger.info("custom_taxo ends")
-            
+           
     return df    
 
 def stem_words(df,stemmer_type):
@@ -318,7 +354,7 @@ def stem_words(df,stemmer_type):
     params:
     df[dataframe]: input dataframe
     stemmer_type[None/string]: input stemming method 
-                                - None for Porter Stemmer
+                                - None for Porter Stemmer [DEFAULT]
                                 - "Lancaster" for Lancaster Stemmer 
     """
     logger.info("stem_words starts")    
@@ -340,7 +376,7 @@ def lemmatize_words(df,lemma_type):
     params:
     df[dataframe]: input dataframe
     lemma_type[None/string]: input lemmatization method
-                            - None for WordNetLemmatizer
+                            - None for WordNetLemmatizer [DEFAULT]
                             - "Spacy" for Spacy    
     """
     logger.info("lemmatize_words starts")    
@@ -363,17 +399,17 @@ def lemmatize_words(df,lemma_type):
 
 def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
     """
-    Feature extraction methods - TF-IDF(default choice) or Bag of words
+    Feature extraction methods - TF-IDF[DEFAULT] or Bag of words
      
     params:
     column [series/DataFrame]: column selected for feature extraction 
                         - series: only one column is selected for feature extraction (e.g. df["title_clean"])
                         - DataFrame: more than one column is selected for feature extraction (e.g. df[["title_clean","desc_clean"]])
     ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
-                                       - [default] ngram_range of (1, 1) means only unigrams, 
+                                       - [DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
+    ascending [True/False/None]: - [DEFAULT] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)                               
     fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
@@ -383,7 +419,7 @@ def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
     
     if type(column) == pd.DataFrame: #concat the columns into one string if there is more than one column 
         column = column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1)
-        logger.info("The column(s) selected for feature extraction: %s", column) 
+         
            
     if ngram_range == None: #set ngram range as unigram by default
         ngram_range=(1,1)
@@ -406,9 +442,144 @@ def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
             
         df = df.sort_values(by ='sum', axis = 1,ascending=ascending)
     
-    logger.info("The column(s) selected for feature extraction: %s", column) 
+    
     logger.info("ngram_range selected is %s",ngram_range)
     
     logger.info("feature_extraction ends")
     
     return df,vec_type,vectorized
+
+### Additional code####
+### Custom taxonomy with NER###
+# import pandas as pd
+# from tqdm import tqdm
+# import spacy
+# from spacy.tokens import DocBin
+# import numpy as np
+
+# def convert_spacy(DATA):
+#     """
+#     Convert  data into .spacy format
+#     DATA[]: Train/validation data to be converted to .spacy format
+#     """
+#     nlp = spacy.blank("en") # load a new spacy model
+#     db = DocBin() # create a DocBin object
+
+#     for text, annot in tqdm(DATA): # data in previous format
+#         doc = nlp.make_doc(text) # create doc object from text
+#         ents = []
+#         for start, end, label in annot["entities"]: # add character indexes
+#             span = doc.char_span(start, end, label=label, alignment_mode="contract")
+#             if span is None:
+#                 print("Skipping entity")
+#             else:
+#                 ents.append(span)
+#         doc.ents = ents # label the text with the ents
+#         db.add(doc)
+        
+#     return db
+
+    
+# def custom_ner(TRAIN_DATA,VAL_DATA,path):
+#     """
+#     Build and save custom NER model in given path. 
+    
+#     """
+#     #convert train and validation data into .spacy format
+#     db_train = convert_spacy(TRAIN_DATA) 
+#     db_val = convert_spacy(VAL_DATA) 
+    
+#     #save train and validation data in .spacy format in path
+#     db_train.to_disk(path +'train.spacy')
+#     db_val.to_disk(path +'val.spacy')
+    
+#     print("Train and validation converted to .spacy format and saved")
+    
+#     #autofill base_config file saved by user from spacy website
+#     !python -m spacy init fill-config base_config.cfg config.cfg
+    
+#     #Model building and saving in path
+#     !python -m spacy train config.cfg --output ./output --paths.train ./train.spacy --paths.dev ./val.spacy
+    
+#     print("Custom NER model built and saved!")
+    
+# def check_ents(path,column):
+#     """
+#     Check entities after loading best model
+    
+#     """
+#     #Load best model
+#     nlp = spacy.load(path + "/output/model-best/")     
+#     print("Best model loaded!")
+    
+#     entities = []
+#     for text in column.tolist():
+#         doc = nlp(text)
+#         for ent in doc.ents:
+#             entities.append(ent.text+' - '+ent.label_)
+#     print(np.unique(np.array(entities)))        
+
+# def ner_wrapper(TRAIN_DATA,VAL_DATA,path,column,train_model):  
+#     """
+#     User can choose to train the spacy model or load spacy model
+#     params:
+#     TRAIN_DATA[NER format]: train data for model building
+#     VAL_DATA[NER format]: validation data for model building
+#     path[string]: input path to store model. Path has to be the same as base_config.cfg file downloaded from spacy
+#                   website and jupyter notebook.
+#     column[series]: column for entities to be checked
+#     train_model[True/False]: True if want to train model. False to load model (no training)
+#     """
+#     if train_model == True:
+#         custom_ner(TRAIN_DATA,VAL_DATA,path)
+#         check_ents(path,column)
+        
+#     if train_model == False:
+#         check_ents(path,column)
+
+# ### Custom Tokenization ###
+# def cust_tokenization_split(column,delim =None):
+#     """
+#     Custom tokenization using split() 
+#     params:
+#     column[series]: input column           
+#     delim[None/string],default delimiter (delim=None) is whitespace: specify delimiter to separate strings
+#                         - None: delimiter is white space
+#                         - string: delimiter is the string specified       
+#     """
+    
+#     if delim==None:
+#         print("Text is split by whitespace") #default delimiter is space if not specified 
+
+#     else:
+#         print("Text is split by:", delim) #can accept one or more delimiter
+
+#     return column.apply(lambda text: text.split() if delim==None else text.split(delim))
+
+# import nltk
+# from nltk.tokenize import word_tokenize
+# from nltk.tokenize import sent_tokenize
+# from nltk.tokenize import WhitespaceTokenizer
+# from nltk.tokenize import WordPunctTokenizer
+
+# def cust_tokenization_nltk(column,token_type):
+#     """
+#     Custom tokenization using NLTK 
+#     params:
+#     column[series]: input column 
+#     token_type["string"]: type of nltk tokenization
+#     a) token_type = "WordToken" tokenizes a string into a list of words
+#     b) token_type = "SentToken" tokenizes a string containing sentences into a list of sentences
+#     c) token_type = "WhiteSpaceToken" tokenizes a string on whitespace (space, tab, newline)
+#     d) token_type = "WordPunctTokenizer" tokenizes a string on punctuations
+#     """
+#     if token_type == "WordToken":
+#         tokenizer = word_tokenize
+#     if token_type == "SentToken":
+#         tokenizer = sent_tokenize
+#     if token_type == "WhiteSpaceToken":
+#         tokenizer = WhitespaceTokenizer().tokenize
+#     if token_type == "WordPunctTokenizer":
+#         tokenizer = WordPunctTokenizer().tokenize
+
+#     return column.apply(lambda text: tokenizer(text))
