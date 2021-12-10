@@ -1,8 +1,8 @@
 Email [string]: user's email
 
-user_outpath [string]: user output path of the files, without filename
+user_outpath [string]: user output path of the files, without filename. If empty string ("") is provided, the current working directory will be used
 
-log_path [string]: log path of the files, without filename
+log_path [string]: log path of the files, without filename. If empty string ("") is provided, the current working directory will be used
 
 ###---------------- Data Loading --------------------- ###
 
@@ -196,7 +196,7 @@ elk_outpath [string]: ELK output path of the files, without filename
 
 ###---------------- Supervised Learning --------------------- ###
 
-SupervisedLearning
+SupervisedLearning (for data with target only)
 
 (A) supervised_lng
     Consists of 3 supervised machine learning methods: RandomForest (Default), Naive Bayes(optional, SVM (optional)
@@ -232,9 +232,10 @@ SupervisedLearning
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
     fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
-    hidden_layer_sizes[tuple],default(null) = (100): To set the number of layers and the number of nodes.
-                                               Each element in the tuple represents the number of nodes,
-                                               length of tuple denotes the total number of hidden layers in the network
+    hidden_layer_sizes[int/list/null],default(null) = 100: To set the number of layers and the number of nodes.
+                                               Each integer represents the number of nodes, length of integer separated by comma denotes the total number of hidden layers in the network
+					       For example: a) Example 1: hidden_layer_sizes= 100 represents 100 nodes with one hidden layer only
+							    b) Example 1: hidden_layer_sizes= [100,100] represents 100 nodes with 2 hidden layers 
     activation["identity", "logistic", "tanh","relu"], default(null)= "relu": Activation function for the hidden layer.
     solver["lbfgs", "sgd", "adam"], default(null):"adam": The solver for weight optimization.
     learning_rate["constant", "invscaling", "adaptive"], default(null)= "constant": Learning rate schedule for weight updates
