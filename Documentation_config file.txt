@@ -1,0 +1,290 @@
+Email [string]: user's email
+
+user_outpath [string]: user output path of the files, without filename. If empty string ("") is provided, the current working directory will be used
+
+log_path [string]: log path of the files, without filename. If empty string ("") is provided, the current working directory will be used
+
+###---------------- Data Loading --------------------- ###
+
+DataLoading function is compulsory. Load only json files that follow the agreed filename format, merge files as single dataframe. User can choose to 
+a) Load all json files following the agreed filename format
+b) Load only json files from specific dates by adding the start and stop dates (Note: Both start_date and
+   stop_date must be used together)
+params:
+    path [string]: path of the files, without filename
+    start_date[None/string in YYYY-MM-DD format](optional,default is None): 
+    User can choose to load files starting from start_date
+    - None: no start_date is provided, all files are loaded
+    - string in YYYY-MM-DD format: files starting from start_date will be loaded
+    stop_date[None/string in YYYY-MM-DD format](optional,default is None): 
+    User can choose to load files until stop_date
+    - None: no stop_date is provided, all files are loaded
+    - string in YYYY-MM-DD format: files until stop_date will be loaded
+
+###---------------- Data Preprocessing --------------------- ###
+
+Remove noise and clean the text data. 
+Functions consist of dataframe manipulation (compulsory), target (Only for supervised learning), work contractions, lowercase, 
+removing html tag, url, irrelevant characters and punctuation, numeric data, multiple white spaces, stopwords, frequent words, rare words, 
+user provides taxonomy to be removed or remained in the text, stemming and lemmatization of words. 
+All functions are optional, except df_manipulation. User can specify Enable: true to enable the optional function. 
+
+(A) df_manipulation
+    DataFrame Manipulation function is compulsory
+    1) Column selection: Keep columns in dataframe
+    2) Data impute: Impute NA rows with empty string
+    3) Data duplication cleaning: Drop all duplicates or drop all duplicates except for the first/last occurrence
+    params:
+    how[string]: Drop rows when we have at least one NA or all NA. Choose
+                      # - "null": Drop row with all NA
+                      # - "all": Drop row with all NA
+                      # - "any": Drop row with at least one NA
+    col_selection [list/null]: - null [Default]: Keep all columns in dataframe 
+                               - list of columns to keep in dataframe, id should always be included in col_selection          
+    keep[string/null]: Choose to drop all duplicates or drop all duplicates except for the first/last occurrence
+                        # - "first" [Default]: Drop duplicates except for the first occurrence. 
+                        # - "last" : Drop duplicates except for the last occurrence. 
+                        # - null : Drop all duplicates.
+    subset[list/null]: Subset of columns for dropping NA and identifying duplicates, use null if no column to select
+
+(B) target 
+    Only enable when using supervised learning, for similarity metrics and unsupervised specify Enable: false. 
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    column[string]: User can specify the target, example "problem_area"
+
+(C) word_contractions
+    Expand word contractions (i.e. "isn't" to "is not")
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+
+(D) lowercase 
+    Convert all characters to lower case
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+
+(E) remove_htmltag_url
+    Remove html tag and url
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+
+(F) remove_irrchar_punc    
+    Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex format.    
+    params:    
+    enable[true/false]: true is to enable the function and false is to disable the function
+    char[string/null] (optional): string is input regex of characters to be removed and null is no characters to be removed
+
+(G) remove_num
+    Remove numeric data
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+
+(H) remove_multwhitespace    
+    Remove multiple white spaces
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+
+(I) remove_stopwords  
+    Removes English stopwords. Optional: user can add own stopwords or remove words from English stopwords  
+    The stopwords that are removed from the text will be printed in the logs 
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    extra_sw [list/null] (optional): list of words/phrase to be added to the stop words, if null is chosen there is no extra stopwords
+    remove_sw [list/null] (optional): list of words to be removed from the stop words, if null is chosen there is no remove stopwords
+
+(J) remove_freqwords
+    Remove n frequent words, the frequent words that are removed from the text will be printed in the logs 
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    n [integer]: input number of frequent words to be removed
+
+(K) remove_rarewords 
+    Remove n rare words, the rare words that are removed from the text will be printed in the logs 
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    n [integer]: input number of rare words to be removed
+
+(L) custom_taxo 
+    User provides taxonomy to be removed from the text. 
+    The list of taxonomy that are removed from the text will be printed in the logs 
+    a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
+    b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
+    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies 
+    or regex to be removed in remove_taxo and list of phrases for the taxonomy to remain in include_taxo
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
+    include_taxo[list/null](optional): list of phrases for the taxonomy to remain in text or if null is chosen there is no taxonomy 
+    
+(M) stem_words
+    Stemming words. Default option is Porter Stemmer, alternative option is Lancaster Stemmer  
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    stemmer_type[null/string]: input stemming method 
+                                - null for Porter Stemmer (default option)
+                                - "Lancaster" for Lancaster Stemmer (alternative option)
+
+(N) lemmatize_words 
+    Lemmatize words: Default option is WordNetLemmatizer, alternative option is Spacy 
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    lemma_type[null/string]: input lemmatization method
+                            - null for WordNetLemmatizer (default option)
+                            - "Spacy" for Spacy (alternative option)
+
+###---------------- Unsupervised Learning --------------------- ###
+
+UnsupervisedLearning
+
+Output: 
+    params:
+    User [true/false]: true for choosing to save the output in the user_outpath, false for choosing not to save the output in the user_outpath
+
+    ELK [true/false]: true for choosing to save the output in the elk_outpath, false for choosing not to save the output in the elk_outpath
+                      - after output is saved in the elk_outpath, it will be ingested in the ELK track 
+
+elk_outpath [string]: ELK output path of the files, without filename
+
+(A) kmeans_clustering
+    K- means clustering for unsupervised learning. User can choose either options:
+    (1) provide the number of clusters or
+    (2) provide the max number of clusters for kmeans to iterate through, the optimal number of clusters with highest 
+    silhouette score will be chosen. Min number of clusters is fixed as 2
+    Returns:
+    a) Top no of terms(top_n_terms) associated with each cluster 
+    b) Dataframe with ID,raw text and cluster
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    top_n_terms[int]: the top n terms in each cluster to be printed out
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null (default) where ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    n_clusters[null/int]: number of clusters. Choose null for option (2)
+    max_n_clusters[null/int]: max number of clusters. null for option (1)
+
+(B) lda
+    LDA for unsupervised learning. Bag of words is selected for feature extraction
+    Returns:
+    a) Top no of terms(top_n_terms) associated with each cluster 
+    b) Dataframe with ID,raw text and cluster
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    n_components[int]: the number of topics/clusters used in the lda_model
+    top_n_terms[int]: the top n terms in each topic/cluster to be printed out
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null (default) where ngram_range of (1, 1) means only unigrams,  
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+
+
+(C) nmf 
+    Non-negative matrix factorization for unsupervised learning.
+    Returns:
+    a) Top no of terms(top_n_terms) associated with each cluster 
+    b) Dataframe with ID,raw text and cluster
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    n_components[int]: the number of topics/clusters used in NMF
+    top_n_terms[int]: the top n terms in each topic/cluster to be printed out
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null (default) where ngram_range of (1, 1) means only unigrams,  
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+
+###---------------- Supervised Learning --------------------- ###
+
+SupervisedLearning (for data with target only)
+
+(A) supervised_lng
+    Consists of 3 supervised machine learning methods: RandomForest (Default), Naive Bayes(optional, SVM (optional)
+    Returns .joblib model, overall accuracy, classification report, confusion matrix
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    target [string/false]: label of data
+    test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split
+                          If int, represents the absolute number of test samples
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null is default where ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    model_type[null/string]: Choose ML algorithm 
+                            - null (Default algorithm is Random Forest)
+                            - 'NB'(To choose Naive Bayes as ML algorithm), 
+                            - 'SVM'(To choose Support Vector Machine as ML algorithm)
+    ascend[true/false/null]:  - null (Default: Confusion matrix is arranged in alphabetical order)
+                              - true(Confusion matrix arranged in ascending order of accuracy % per label), 
+                              - false(Confusion matrix arranged in descending order of accuracy % per label)  
+
+(B) deep_lng
+    Deep learning method: MultiLayer Perceptron
+    Returns .joblib model, overall accuracy, classification report, confusion matrix
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    target [string/false]: label of data
+    test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split
+                          If int, represents the absolute number of test samples
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null is default where ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    hidden_layer_sizes[int/list/null],default(null) = 100: To set the number of layers and the number of nodes.
+                                               Each integer represents the number of nodes, length of integer separated by comma denotes the total number of hidden layers in the network
+					       For example: a) Example 1: hidden_layer_sizes= 100 represents 100 nodes with one hidden layer only
+							    b) Example 1: hidden_layer_sizes= [100,100] represents 100 nodes with 2 hidden layers 
+    activation["identity", "logistic", "tanh","relu"], default(null)= "relu": Activation function for the hidden layer.
+    solver["lbfgs", "sgd", "adam"], default(null):"adam": The solver for weight optimization.
+    learning_rate["constant", "invscaling", "adaptive"], default(null)= "constant": Learning rate schedule for weight updates
+    max_iter[int], default(null)= 200: Maximum number of iterations. The solver iterates until convergence or this number of iterations.
+    ascend [true/false/null]: - null (Default: Confusion matrix is arranged in alphabetical order)
+                                 - true(Confusion matrix arranged in ascending order of accuracy % per label), 
+                                 - false(Confusion matrix arranged in descending order of accuracy % per label)                            
+
+###---------------- Similarity Metrics --------------------- ###
+
+SimilarityMetrics
+
+(A) cosinesimilarity
+    Compute the cosine similarity between rows of texts. User can 
+    a) fix number of rows for comparison, each row will be taken as base and compared with the rest
+    b) fix one row as base, comparison will be done with all the other rows
+    Returns:
+    Dataframe with base index/row, index/row, similarity score, text
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    threshold[null/float]: cut off value for the cosine similarity, only texts with values above or equal to threshold
+                           will be printed
+                        - null: Default threhold is 0.5
+                        - float: any value between 0 and 1 
+    total_rows[null/int]: Number of rows for comparison, choose null for option b 
+    base_row[null/int]: Row fixed as base, choose null for option a 
+    ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
+                                       - null is default where ngram_range of (1, 1) means only unigrams, 
+                                       - ngram_range of (1, 2) means unigrams and bigrams, 
+                                       - ngram_range of (2, 2) means only bigram
+    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    ascending [true/false/null]: - [default] null (words arranged in alphabetical order)
+                                 - true(words arranged in ascending order of sum), 
+                                 - false(words arranged in descending order of sum) 
+
+(B) jaccardsimilarity
+    Compute the jaccard similarity between texts. User can 
+    a) fix number of rows for comparison, each row will be taken as base and compared with the rest
+    b) fix one row as base, comparison will be done with all the other rows
+    Returns:
+    Dataframe with base index/row, index/row, similarity score, text
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    threshold[null/float]: cut off value for the cosine similarity, only texts with values above or equal to threshold
+                           will be printed
+                        - null: Default threhold is 0.5
+                        - float: any value between 0 and 1 
+    total_rows[null/int]: Number of rows for comparison, choose null for option b 
+    base_row[null/int]: Row fixed as base, choose null for option a 
+    ascending [true/false/null]: - [default] null (words arranged in alphabetical order)
+                                 - true(words arranged in ascending order of sum), 
+                                 - false(words arranged in descending order of sum) 
