@@ -1,0 +1,7 @@
+"data_path" : path where data is stored and loaded from 
+"log_path": path to store the logs
+"outpath": path to store the output (can be "user" to store in user output path or "elk" in ELK output path). 
+	   -> "enable"[true/false]: true to enable, false to disable
+	   -> "user_outpath": specify user output path if "enable": true in "user"
+	   -> "elk_outpath": specify ELK output path if "enable": true in "elk"
+"package_path": path where the nltk and spacy model packages are stored
