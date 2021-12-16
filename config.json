@@ -1,13 +1,9 @@
 {
-        "Email": "abc@intel.com",
-        "user_outpath": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/user_outpath/",
-        "log_path": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/user_outpath/",
-        "DataLoading": {
-                "path": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/General/Sample json output/HSD ES Raw Data/team1/",
+        "DataLoading": {                
                 "start_date": null,
                 "stop_date": null
         },
-        "DataPreprocessing": {
+        "DataPreprocessing": {		
                 "df_manipulation": {
                         "how": null,
                         "col_selection": [
@@ -42,7 +38,7 @@
                 },
                 "remove_stopwords": {
                         "enable": true,
-                        "extra_sw": null,
+                        "extra_sw": ["hi"],
                         "remove_sw": null
                 },
                 "remove_freqwords": {
@@ -61,27 +57,22 @@
                         ]
                 },
                 "stem_words": {
-                        "enable": true,
+                        "enable": false,
                         "stemmer_type": null
                 },
                 "lemmatize_words": {
-                        "enable": false,
+                        "enable": true,
                         "lemma_type": null
-                }
+               }
         },
-        "UnsupervisedLearning": {
-                "Output": {
-                        "User": false,
-                        "ELK": true
-                },
-                "elk_outpath": "C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/elk_outpath/",
+        "UnsupervisedLearning": {                         
                 "kmeans_clustering": {
                         "enable": true,
                         "top_n_terms": 10,
                         "ngram_range": null,
                         "fe_type": null,
-                        "n_clusters": null,
-                        "max_n_clusters": 5
+                        "n_clusters": 5,
+                        "max_n_clusters": null
                 },
                 "lda": {
                         "enable": true,
@@ -124,7 +115,7 @@
         "SimilarityMetrics": {
                 "cosinesimilarity": {
                         "enable": true,
-                        "threshold": 0,
+                        "threshold": null,
                         "total_rows": 10,
                         "base_row": null,
                         "ngram_range": null,
@@ -133,7 +124,7 @@
                 },
                 "jaccardsimilarity": {
                         "enable": true,
-                        "threshold": 0,
+                        "threshold": null,
                         "total_rows": 10,
                         "base_row": null,
                         "ascending": null
