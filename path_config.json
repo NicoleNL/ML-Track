@@ -1,0 +1,15 @@
+{
+        "data_path": "/tmp/nchong/ML_Track/Data/",
+        "log_path": "/tmp/nchong/ML_Track/output/",
+        "outpath": {
+                "user": {
+                        "enable": true,
+                        "user_outpath": "/tmp/nchong/ML_Track/output/"
+                },
+                "elk": {
+                        "enable": false,
+                        "elk_outpath": "/tmp/nchong/ML_Track/output/"
+                }
+        },
+        "package_path": "/tmp/nchong/ML_Track/"
+}

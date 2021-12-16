@@ -187,6 +187,7 @@ def remove_stopwords(df,extra_sw=None,remove_sw=None):
     remove_sw [list] (optional): list of words to be removed from the stop words 
     """
     logger.info("remove_stopwords starts")
+    #nltk.download('stopwords')
     all_stopwords = stopwords.words('english')
     
     #default list of stopwords
@@ -215,6 +216,7 @@ def remove_stopwords(df,extra_sw=None,remove_sw=None):
         pattern = r'\b'+w+r'\b'
         df = df.replace(pattern,' ', regex=True)
     
+    logger.info("Stopwords that are removed: %s", all_stopwords)
     df = df.add_suffix('_stoprem')
     logger.info("remove_stopwords ends")
                
@@ -298,7 +300,8 @@ def custom_taxo(df,remove_taxo,include_taxo):
         
     #if remove_taxo is regex call convert function to get all matches as a list
     if type(remove_taxo) == str: 
-        logger.info("User input the regex:",remove_taxo)
+        # logger.info("User input the regex:",remove_taxo)
+        logger.info("User input the regex:"+ remove_taxo)
         cv_list = []
         for i in range(len(df.columns)):
             for text in df.iloc[:,i]:
@@ -309,7 +312,7 @@ def custom_taxo(df,remove_taxo,include_taxo):
 
         cv_df = pd.DataFrame(cv_list)
         remove_taxo = list(cv_df["Match"].apply(pd.Series).stack().unique())
-        logger.info("Remove_taxo_list:", remove_taxo)
+        logger.info("Remove_taxo_list: %s",remove_taxo)
         
     def taxo(text,remove_taxo,include_taxo): 
         if remove_taxo != None and include_taxo != None: #user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases (i.e remove "test" but remain "test" in "test cyccle")
@@ -382,12 +385,13 @@ def lemmatize_words(df,lemma_type):
     logger.info("lemmatize_words starts")    
     if lemma_type == None:
         logger.info("WordNetLemmatizer chosen for lemmatization")
+       # nltk.download('wordnet')
         lemmatizer = WordNetLemmatizer()
         df = df.applymap(lambda text: " ".join([lemmatizer.lemmatize(word) for word in text.split()]))
         
     if lemma_type == "Spacy":
-        logger.info("Spacy chosen for lemmatization")
-        nlp = spacy.load("en_core_web_sm")
+        logger.info("Spacy chosen for lemmatization")               
+        nlp = spacy.load('en_core_web_sm-3.2.0/en_core_web_sm/en_core_web_sm-3.2.0')
         df = df.applymap(lambda text: " ".join([word.lemma_ for word in nlp(text)]))
         #convert to lower case as spacy will convert pronouns to upper case
         df = df.applymap(lambda s:s.lower() if type(s) == str else s) 
@@ -454,7 +458,7 @@ def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
 # import pandas as pd
 # from tqdm import tqdm
 # import spacy
-# from spacy.tokens import DocBin
+#from spacy.tokens import DocBin
 # import numpy as np
 
 # def convert_spacy(DATA):

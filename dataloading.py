@@ -59,7 +59,8 @@ def data_loading(path,start_date=None,stop_date=None):
                 
     else:
         #convert start and stop string to datetime
-        logger.info("Load dataset from %s",start_date," until %s",stop_date)
+        # logger.info("Load dataset from %s",start_date," until %s",stop_date)
+        logger.info("Load dataset from %s until %s" %(start_date,stop_date))
         start = datetime.strptime(start_date, "%Y-%m-%d").date()
         stop = datetime.strptime(stop_date, "%Y-%m-%d").date()
     

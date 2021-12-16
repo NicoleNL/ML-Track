@@ -1,41 +1,74 @@
-# import UsrIntel.R1
+import UsrIntel.R2
 import json     
 import pandas as pd
 import logging  
 import argparse
+import os,sys
+import nltk
 from dataloading import data_loading
 from datapreprocessing import df_manipulation,word_contractions,lowercase,remove_htmltag_url,remove_irrchar_punc,remove_num,remove_multwhitespace,remove_stopwords,remove_freqwords,remove_rarewords
 from datapreprocessing import custom_taxo,stem_words,lemmatize_words,feature_extraction
 from mlmodule import kmeans_clustering,lda,nmf,supervised_lng,deep_lng,cosinesimilarity,jaccardsimilarity
 
 #read config file and call the other functions
-def main(config_file):         
+def main(config_file,path_config):          
     
     with open(config_file) as f:
-        data = json.load(f)
-        
-    user_outpath = data["user_outpath"]    
-    log_path = data["log_path"]
+        data = json.load(f) #load user's config file
     
+    with open(path_config) as pc:
+        path = json.load(pc) #load the path config file (for core team use only)
+    
+    try:
+        data_path = path["data_path"]            
+    except: #output printed in current working directory if not specified
+        data_path = os.path.abspath(os.getcwd())
+    
+    try:    
+        log_path = path["log_path"]
+    except:#logs printed in current working directory if not specified
+        log_path = os.path.abspath(os.getcwd())
+    
+    if path["outpath"]["user"]["enable"]:#store output in user folder 
+        try:
+            outpath = path["outpath"]["user"]["user_outpath"]
+        except:
+            outpath = os.path.abspath(os.getcwd())
+            
+    if path["outpath"]["elk"]["enable"]: #store output in ELK folder
+        try:
+            outpath = path["outpath"]["elk"]["elk_outpath"]
+        except:
+            outpath = os.path.abspath(os.getcwd())      
+      
+    #set the path to search for the model packages from nltk and spacy
+    # nltk.data.path.append(path["package_path"])
+    nltk.data.path = [path["package_path"]]
+    # package_path = path["package_path"]                
+    
+    # sys.path.append(package_path) #set the path to save the model packages from nltk and spacy
+
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', filename=log_path+"logs.log", filemode='w')
     logger = logging.getLogger("MLTrack")      
     
     
-    email = data["Email"]
-    logger.info("########-----------------------------------------############")
-    logger.info("USER'S EMAIL: %s",email)
+    # email = data["Email"]
+    # logger.info("########-----------------------------------------############")
+    # logger.info("USER'S EMAIL: %s",email)
     logger.info("########-----------------------------------------############")
     
         
     #---------DATA LOADING----------#
     logger.info("Data Loading starts")
     dl = data["DataLoading"]
-    path,start_date,stop_date = dl['path'],dl['start_date'],dl['stop_date']  
-    df = data_loading(path=path,start_date=start_date,stop_date=stop_date)
+            
+    start_date,stop_date = dl['start_date'],dl['stop_date']  
+    df = data_loading(path=data_path,start_date=start_date,stop_date=stop_date)
     logger.info("Data Loading ends")
         
     #---------DATA PREPROCESSING----------# 
     logger.info("Data Preprocessing starts")
+    
     #df_manipulation
     dm = data["DataPreprocessing"]["df_manipulation"]
     how,col_selection,keep,subset = dm['how'],dm['col_selection'],dm['keep'],dm['subset']  
@@ -137,20 +170,14 @@ def main(config_file):
         df = pd.concat([target,df],axis=1)
         df_all = pd.concat([target,df_all],axis=1) 
       
-    df_all.to_csv(user_outpath+"preprocessed_text.csv",index=False) #save after data preprocessing   
+    df_all.to_csv(outpath+"preprocessed_text.csv",index=False) #save after data preprocessing   
     logger.info("Data Preprocessing ends")
     
     #---------------ML module---------------# 
-    logger.info("Ml module starts")
+    logger.info("Ml module starts")    
     
-    elk_outpath = data["UnsupervisedLearning"]["elk_outpath"]
     
-    ####---Unsupervised Learning---###
-    #check output save in user or ELK folder
-    if data["UnsupervisedLearning"]["Output"]["User"]:#store output in user folder 
-        outpath = user_outpath
-    if data["UnsupervisedLearning"]["Output"]["ELK"]: #store output in ELK folder
-        outpath = elk_outpath 
+    ####---Unsupervised Learning---### 
 
     #k-means clustering 
     km= data["UnsupervisedLearning"]["kmeans_clustering"]
@@ -186,41 +213,42 @@ def main(config_file):
     cosinesim = cs["enable"]
     if cosinesim:
         threshold,total_rows,base_row,ngram_range,fe_type,ascending= cs["threshold"],cs["total_rows"],cs["base_row"],cs["ngram_range"],cs["fe_type"],cs["ascending"]        
-        cosinesimilarity(column=df,user_outpath=user_outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ngram_range=ngram_range,fe_type=fe_type,ascending=ascending)
+        cosinesimilarity(column=df,outpath=outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ngram_range=ngram_range,fe_type=fe_type,ascending=ascending)
 
     #Jaccard Similarity
     js= data["SimilarityMetrics"]["jaccardsimilarity"]
     jaccardsim = js["enable"]
     if jaccardsim:
         threshold,total_rows,base_row,ascending= js["threshold"],js["total_rows"],js["base_row"],js["ascending"]
-        jaccardsimilarity(column=df,user_outpath=user_outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ascending=ascending)
+        jaccardsimilarity(column=df,outpath=outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ascending=ascending)
 
     #####-----Supervised Learning----####
-    
-         
+             
     #Machine Learning
     sl= data["SupervisedLearning"]["supervised_lng"]
     SupervisedLearning = sl["enable"]
     if SupervisedLearning:
         target,test_size,ngram_range,fe_type,model_type,ascend= sl["target"],sl["test_size"],sl["ngram_range"],sl["fe_type"],sl["model_type"],sl["ascend"]
-        supervised_lng(df=df,user_outpath=user_outpath,target=target,test_size=test_size,ngram_range=ngram_range,fe_type=fe_type,model_type=model_type,ascend=ascend)
+        supervised_lng(df=df,outpath=outpath,target=target,test_size=test_size,ngram_range=ngram_range,fe_type=fe_type,model_type=model_type,ascend=ascend)
 
     #Deep Learning
     dl= data["SupervisedLearning"]["deep_lng"]
     DeepLearning = dl["enable"]
     if DeepLearning:
         target,test_size,ngram_range,fe_type,hidden_layer_sizes,activation,solver,learning_rate,max_iter,ascend= dl["target"],dl["test_size"],dl["ngram_range"],dl["fe_type"],dl["hidden_layer_sizes"],dl["activation"],dl["solver"],dl["learning_rate"],dl["max_iter"],dl["ascend"]
-        deep_lng(df=df,user_outpath=user_outpath,target=target,test_size=test_size,ngram_range=ngram_range,fe_type=fe_type,hidden_layer_sizes=hidden_layer_sizes,activation=activation,solver=solver,learning_rate=learning_rate,max_iter=max_iter,ascend=ascend)
+        deep_lng(df=df,outpath=outpath,target=target,test_size=test_size,ngram_range=ngram_range,fe_type=fe_type,hidden_layer_sizes=hidden_layer_sizes,activation=activation,solver=solver,learning_rate=learning_rate,max_iter=max_iter,ascend=ascend)
     
     logger.info("Ml module ends")
 
     
 if __name__ == '__main__':  
-    # config_file = 'C:/Users/nchong/OneDrive - Intel Corporation/Documents/Debug Similarity Analytics and Bucketization Framework/ML_Testing/config.json'    
+        
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c',type=str, required=True)
+    parser.add_argument('-c',type=str, nargs = 2, required=True)
+    
     args = parser.parse_args()
-    main(config_file=args.c)  
+    
+    main(config_file = args.c[0],path_config = args.c[1])  
 
 
 
