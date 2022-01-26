@@ -1,4 +1,6 @@
-###---------------- Data Loading --------------------- ###
+Config file consists of 3 parts: a) Data Loading, b) Data Preprocessing, c) ML Module
+
+###---------------- a) Data Loading --------------------- ###
 
 DataLoading function is compulsory. Load only json files that follow the agreed filename format, merge files as single dataframe. User can choose to 
 a) Load all json files following the agreed filename format
@@ -15,7 +17,7 @@ params:
     - None: no stop_date is provided, all files are loaded
     - string in YYYY-MM-DD format: files until stop_date will be loaded
 
-###---------------- Data Preprocessing --------------------- ###
+###----------------b) Data Preprocessing --------------------- ###
 
 Remove noise and clean the text data. 
 Functions consist of dataframe manipulation (compulsory), target (Only for supervised learning), word contractions, lowercase, 
@@ -34,7 +36,9 @@ All functions are optional, except df_manipulation. User can specify Enable: tru
                       # - "all": Drop row with all NA
                       # - "any": Drop row with at least one NA
     col_selection [list/null]: - null [Default]: Keep all columns in dataframe 
-                               - list of columns to keep in dataframe, id should always be included in col_selection          
+                               - list of columns to keep in dataframe
+				 *****NOTE: 1) "id" should always be included in col_selection as the unique identifier 
+                                            2)  Always include the target/label in col_selection if you're choosing supervised learning as ML method      
     keep[string/null]: Choose to drop all duplicates or drop all duplicates except for the first/last occurrence 
                         # - "first" [Default]: Drop duplicates except for the first occurrence. 
                         # - "last" : Drop duplicates except for the last occurrence. 
@@ -129,8 +133,22 @@ CHOOSE (M) for stemming or (N) for lemmatization only. User should not choose bo
                             - null for WordNetLemmatizer (default option)
                             - "Spacy" for Spacy (alternative option)
 
-###---------------- Unsupervised Learning --------------------- ###
-UnsupervisedLearning (for data without target), text will be clustered 
+###---------------------------- c) ML Module----------------------------------------- ###
+ML Module consists of Unsupervised Learning, Supervised Learning and Similarity Metrics.
+
+For unlabelled data (data with no target), user can choose:
+1) UnsupervisedLearning (text will be grouped into clusters) or/and
+3) Similarity Metrics (similarity between rows of text will be computed and scored)
+
+For labelled data (data with target), user can choose 2) Supervised Learning (classification of text using machine learning/deep learning)
+
+****NOTE****: 
+If user choose Unsupervised Learning and Similarity Metrics, can use 1 config file only.
+If user choose Unsupervised Learning/Similarity Metrics and Supervised Learning, 2 config files (1 for Unsupervised Learning/Similarity Metrics,
+another for Supervised Learning) are needed .
+
+###----------------1) Unsupervised Learning --------------------- ###
+UnsupervisedLearning (for data without target), text will be grouped into clusters 
 
 (A) kmeans_clustering
     K- means clustering for unsupervised learning. User can choose either options:
