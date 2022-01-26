@@ -37,7 +37,8 @@ def data_loading(path,start_date=None,stop_date=None):
         for file in filenames:
             # search agreed file format pattern in the filename
 
-            pattern = r"^\(\d{4}-\d{2}-\d{1,2}\)\d+\_\D+\_\d+\.json$"
+            #pattern = r"^\(\d{4}-\d{2}-\d{1,2}\)\d+\_\D+\_\d+\.json$"
+            pattern = r".*\.(json)$"
 
             match = re.search(pattern,file)
                 

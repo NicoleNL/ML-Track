@@ -1,27 +1,28 @@
+import sys
 import UsrIntel.R2
-import json     
-import pandas as pd
+import pandas as pd    
+import json
 import logging  
 import argparse
-import os,sys
+import os
 import nltk
 from dataloading import data_loading
-from datapreprocessing import df_manipulation,word_contractions,lowercase,remove_htmltag_url,remove_irrchar_punc,remove_num,remove_multwhitespace,remove_stopwords,remove_freqwords,remove_rarewords
+from datapreprocessing import df_manipulation,df_filterrows,word_contractions,lowercase,remove_htmltag_url,remove_irrchar_punc,remove_num,remove_multwhitespace,remove_stopwords,remove_freqwords,remove_rarewords
 from datapreprocessing import custom_taxo,stem_words,lemmatize_words,feature_extraction
 from mlmodule import kmeans_clustering,lda,nmf,supervised_lng,deep_lng,cosinesimilarity,jaccardsimilarity
 
 #read config file and call the other functions
-def main(config_file,path_config):          
-    
+def main(projname,config_file,path_config):          
+   
     with open(config_file) as f:
         data = json.load(f) #load user's config file
-    
+             
     with open(path_config) as pc:
         path = json.load(pc) #load the path config file (for core team use only)
     
     try:
         data_path = path["data_path"]            
-    except: #output printed in current working directory if not specified
+    except: #output printed in current working= directory if not specified
         data_path = os.path.abspath(os.getcwd())
     
     try:    
@@ -29,34 +30,63 @@ def main(config_file,path_config):
     except:#logs printed in current working directory if not specified
         log_path = os.path.abspath(os.getcwd())
     
+    log_path = log_path + str(projname) + '/'
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', filename=log_path+str(projname)+"_logs.log", filemode='a')
+    logger = logging.getLogger("MLTrack") 
+    
+    logger.info("########-----------------------------------------############")
+    logger.info("PROJECT NAME: %s",str(projname))
+    logger.info("########-----------------------------------------############")
+    logger.info("Interface script is executing")
+    
+    logger.info("User and path config files loaded")
+    logger.info("Data path: %s",data_path)
+    logger.info("Log path: %s",log_path)
+        
     if path["outpath"]["user"]["enable"]:#store output in user folder 
+        logger.info("Store output in user folder")
         try:
-            outpath = path["outpath"]["user"]["user_outpath"]
+            outpath = path["outpath"]["user"]["user_outpath"]            
         except:
             outpath = os.path.abspath(os.getcwd())
+       
+        # Create folders according to projname in outpath if they don't exist already
+        outpath = outpath + str(projname) + '/'
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        
+        logger.info("User Output Path: %s",outpath)
             
-    if path["outpath"]["elk"]["enable"]: #store output in ELK folder
+    if path["outpath"]["elk"]["enable"]: 
+        logger.info("Store output in user and ELK folder")
+        
         try:
-            outpath = path["outpath"]["elk"]["elk_outpath"]
+            outpath_elk = path["outpath"]["elk"]["elk_outpath"]  #store unsupervised learning csv files in ELK folder
+            outpath = path["outpath"]["user"]["user_outpath"]   #store output in user folder for checking 
         except:
-            outpath = os.path.abspath(os.getcwd())      
-      
-    #set the path to search for the model packages from nltk and spacy
+            outpath_elk = os.path.abspath(os.getcwd()) 
+            outpath = os.path.abspath(os.getcwd())
+        
+        # Create folders according to projname in outpath/outpath_elk if they don't exist already
+        outpath = outpath + str(projname) + '/'
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        
+        outpath_elk = outpath_elk + str(projname) + '/'
+        if not os.path.exists(outpath_elk):
+            os.makedirs(outpath_elk)
+        
+        logger.info("User Output Path: %s",outpath)
+        logger.info("ELK Output Path: %s",outpath_elk)
+    
+                
+   #set the path to search for the model packages from nltk and spacy
     # nltk.data.path.append(path["package_path"])
     nltk.data.path = [path["package_path"]]
-    # package_path = path["package_path"]                
-    
-    # sys.path.append(package_path) #set the path to save the model packages from nltk and spacy
-
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', filename=log_path+"logs.log", filemode='w')
-    logger = logging.getLogger("MLTrack")      
-    
-    
-    # email = data["Email"]
-    # logger.info("########-----------------------------------------############")
-    # logger.info("USER'S EMAIL: %s",email)
-    logger.info("########-----------------------------------------############")
-    
+                
         
     #---------DATA LOADING----------#
     logger.info("Data Loading starts")
@@ -65,19 +95,27 @@ def main(config_file,path_config):
     start_date,stop_date = dl['start_date'],dl['stop_date']  
     df = data_loading(path=data_path,start_date=start_date,stop_date=stop_date)
     logger.info("Data Loading ends")
-        
+    
+           
     #---------DATA PREPROCESSING----------# 
     logger.info("Data Preprocessing starts")
     
+    #df_filterrows
+    fr = data["DataPreprocessing"]["df_filterrows"]
+    if data["DataPreprocessing"]["df_filterrows"]["enable"]:
+        col,keep_list,drop_list = fr["col"],fr["keep_list"],fr["drop_list"]
+        df = df_filterrows(df,col=col,keep_list=keep_list,drop_list=drop_list)
+        df_all = df.copy()
+    
     #df_manipulation
+    df_out = df.drop(["file"],axis=1) #all text -> ml output
     dm = data["DataPreprocessing"]["df_manipulation"]
     how,col_selection,keep,subset = dm['how'],dm['col_selection'],dm['keep'],dm['subset']  
     df = df_manipulation(df,how=how,col_selection=col_selection,keep=keep,subset=subset)
    
-    df_all = df.copy() #id, raw text -> data preprocessing final file
-    df_out = df.copy() #id, raw text -> ml output
+    df_all = df.copy() #id, raw text -> data preprocessing final file    
     df = df.drop("id",axis=1) #raw text for data preprocessing
-    
+               
     #remove target from df for supervised    
     if data["DataPreprocessing"]["target"]["enable"]:
         target = data["DataPreprocessing"]["target"]["column"]
@@ -103,7 +141,14 @@ def main(config_file,path_config):
     if tagrem:
         df = remove_htmltag_url(df)
         df_all = pd.concat([df_all,df],axis=1)
-
+        
+    # Custom taxonomy
+    ct = data["DataPreprocessing"]["custom_taxo"]
+    taxo,remove_taxo,include_taxo = ct["enable"], ct["remove_taxo"], ct["include_taxo"]
+    if taxo:
+        df = custom_taxo(df,remove_taxo,include_taxo)
+        df_all = pd.concat([df_all,df],axis=1)  
+        
     #Remove irrelevant characters and punctuation
     pc = data["DataPreprocessing"]["remove_irrchar_punc"]
     puncrem,char = pc["enable"],pc["char"] 
@@ -142,15 +187,8 @@ def main(config_file,path_config):
     rarerem,n = rw["enable"],rw["n"]    
     if rarerem:
         df = remove_rarewords(df,n)
-        df_all = pd.concat([df_all,df],axis=1)
-        
-    # Custom taxonomy
-    ct = data["DataPreprocessing"]["custom_taxo"]
-    taxo,remove_taxo,include_taxo = ct["enable"], ct["remove_taxo"], ct["include_taxo"]
-    if taxo:
-        df = custom_taxo(df,remove_taxo,include_taxo)
-        df_all = pd.concat([df_all,df],axis=1)     
-        
+        df_all = pd.concat([df_all,df],axis=1)        
+          
     # Stemming
     st = data["DataPreprocessing"]["stem_words"]
     stem,stemmer_type = st["enable"],st["stemmer_type"]     
@@ -160,9 +198,9 @@ def main(config_file,path_config):
     
     #Lemmatization
     lem = data["DataPreprocessing"]["lemmatize_words"]
-    lemma,lemma_type = lem["enable"], lem["lemma_type"]      
+    lemma,lemma_type,package_path = lem["enable"], lem["lemma_type"],path["package_path"]      
     if lemma:
-        df = lemmatize_words(df,lemma_type)
+        df = lemmatize_words(df,package_path,lemma_type)
         df_all = pd.concat([df_all,df],axis=1)
     
     #column bind target to df
@@ -170,7 +208,7 @@ def main(config_file,path_config):
         df = pd.concat([target,df],axis=1)
         df_all = pd.concat([target,df_all],axis=1) 
       
-    df_all.to_csv(outpath+"preprocessed_text.csv",index=False) #save after data preprocessing   
+    df_all.to_excel(outpath+"preprocessed_text.xlsx",index=False) #save after data preprocessing   
     logger.info("Data Preprocessing ends")
     
     #---------------ML module---------------# 
@@ -185,8 +223,12 @@ def main(config_file,path_config):
     if kmeans:
         top_n_terms,ngram_range,fe_type,n_clusters,max_n_clusters= km["top_n_terms"],km["ngram_range"],km["fe_type"],km["n_clusters"],km["max_n_clusters"]        
         df_out["cluster"]=kmeans_clustering(column=df,outpath=outpath,top_n_terms=top_n_terms,ngram_range=ngram_range,fe_type=fe_type,n_clusters=n_clusters,max_n_clusters=max_n_clusters)
-        df_out.to_csv(outpath+"KMeansClustering_output.csv",index=False)          
-        logger.info("K-means clustering results saved in %s as KMeansClustering_output.csv",outpath) 
+        df_out.to_excel(outpath+"KMeansClustering_output.xlsx",index=False) #write to user folder  
+        if path["outpath"]["elk"]["enable"]: #write to ELK folder
+            df_out.to_excel(outpath_elk+"KMeansClustering_output.xlsx",index=False)
+            logger.info("K-means clustering results saved in %s and %s as KMeansClustering_output.xlsx" %(outpath,outpath_elk)) 
+        else:
+            logger.info("K-means clustering results saved in %s as KMeansClustering_output.xlsx",outpath) 
         
     #LDA
     lda_m= data["UnsupervisedLearning"]["lda"]
@@ -194,8 +236,12 @@ def main(config_file,path_config):
     if LatentDirichletAllocation:
         n_components,top_n_terms,ngram_range= lda_m["n_components"],lda_m["top_n_terms"],lda_m["ngram_range"]       
         df_out["cluster"]=lda(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,ngram_range=ngram_range)            
-        df_out.to_csv(outpath+"LatentDirichletAllocation_output.csv",index=False)       
-        logger.info("LDA results saved in %s as LatentDirichletAllocation_output.csv",outpath) 
+        df_out.to_excel(outpath+"LatentDirichletAllocation_output.xlsx",index=False)  #write to user folder 
+        if path["outpath"]["elk"]["enable"]: #write to ELK folder
+            df_out.to_excel(outpath_elk+"LatentDirichletAllocation_output.xlsx",index=False)
+            logger.info("LDA results saved in %s and %s as LatentDirichletAllocation_output.xlsx" %(outpath,outpath_elk))             
+        else:
+            logger.info("LDA results saved in %s as LatentDirichletAllocation_output.xlsx",outpath) 
 
     #NMF Factorization
     nmf_m= data["UnsupervisedLearning"]["nmf"]
@@ -203,9 +249,13 @@ def main(config_file,path_config):
     if NonNegativeMatrixFactorization:
         n_components,top_n_terms,fe_type,ngram_range= nmf_m["n_components"],nmf_m["top_n_terms"],nmf_m["fe_type"],nmf_m["ngram_range"]
         df_out["cluster"]=nmf(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,fe_type=fe_type,ngram_range=ngram_range)              
-        df_out.to_csv(outpath+"NonNegativeMatrixFactorization_output.csv",index=False) 
-        logger.info("NMF results saved in %s as NonNegativeMatrixFactorization_output.csv",outpath) 
-            
+        df_out.to_excel(outpath+"NonNegativeMatrixFactorization_output.xlsx",index=False) #write to user folder 
+        if path["outpath"]["elk"]["enable"]: #write to ELK folder 
+            df_out.to_excel(outpath_elk +"NonNegativeMatrixFactorization_output.xlsx",index=False)
+            logger.info("NMF results saved in %s and %s as NonNegativeMatrixFactorization_output.xlsx" %(outpath,outpath_elk)) 
+        else:
+            logger.info("NMF results saved in %s as NonNegativeMatrixFactorization_output.xlsx",outpath) 
+        
     
     #####---Similarity Metrics-----####
     #Cosine Similarity
@@ -244,11 +294,12 @@ def main(config_file,path_config):
 if __name__ == '__main__':  
         
     parser = argparse.ArgumentParser()
+    parser.add_argument('-s',type=str, required=True)
     parser.add_argument('-c',type=str, nargs = 2, required=True)
     
     args = parser.parse_args()
     
-    main(config_file = args.c[0],path_config = args.c[1])  
+    main(projname = args.s,config_file = args.c[0],path_config = args.c[1])  
 
 
 

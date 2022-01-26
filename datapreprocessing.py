@@ -59,7 +59,6 @@ def df_manipulation(df,how=None,col_selection=None,keep=None,subset=None):
         logger.info("Number of null values in df after dropping NA rows:\n %s",df.isnull().sum())
         logger.info("Shape of df after dropping NA rows:%s",df.shape)
 
-
     #---------Data duplication cleaning--------#
     logger.info("Number of duplicates in the df:%s", df.duplicated().sum())
 
@@ -73,7 +72,34 @@ def df_manipulation(df,how=None,col_selection=None,keep=None,subset=None):
     return df
        
     
-
+def df_filterrows(df,col,keep_list,drop_list):
+    """
+    User can choose to keep or drop row(s) in a column by providing the list of elements in the row(s)
+    params:
+    df [dataframe]: input dataframe 
+    col[string]: input column name in which the row(s) within are to be kept/dropped
+    keep_list[list/None]: list - input list of rows to be kept, None - when using drop_list
+    drop_list[list/None]: list - input list of rows to be dropped, None - when using keep_list
+    Example: To keep/drop the rows ['hw.sa', 'fw.qcode'] in the column “component_affected"
+    """
+    col = str(col)
+    
+    if keep_list != None:
+        logger.info("Distribution of column %s : \n", col)
+        logger.info("%s \n",df[col].value_counts())        
+        df = df[df[col].isin(keep_list)]
+        logger.info("Distribution of column %s after retaining %s only:\n" %(col,keep_list))        
+        logger.info("%s \n",df[col].value_counts()) 
+        
+    if drop_list != None:
+        logger.info("Distribution of column %s : \n", col)    
+        logger.info("%s \n",df[col].value_counts()) 
+        df = df[~df[col].isin(drop_list)]
+        logger.info("Distribution of column %s after dropping %s only:\n" %(col,drop_list)) 
+        logger.info("%s \n",df[col].value_counts())     
+        
+    return df
+    
 def word_contractions(df):
     """
     Expand word contractions (i.e. "isn't" to "is not")
@@ -373,7 +399,7 @@ def stem_words(df,stemmer_type):
     
     return df
 
-def lemmatize_words(df,lemma_type):
+def lemmatize_words(df,package_path,lemma_type):
     """
     Lemmatize words: Default option is WordNetLemmatizer, alternative option is Spacy 
     params:
@@ -391,7 +417,7 @@ def lemmatize_words(df,lemma_type):
         
     if lemma_type == "Spacy":
         logger.info("Spacy chosen for lemmatization")               
-        nlp = spacy.load('en_core_web_sm-3.2.0/en_core_web_sm/en_core_web_sm-3.2.0')
+        nlp = spacy.load(package_path+'en_core_web_sm-3.2.0/en_core_web_sm/en_core_web_sm-3.2.0')
         df = df.applymap(lambda text: " ".join([word.lemma_ for word in nlp(text)]))
         #convert to lower case as spacy will convert pronouns to upper case
         df = df.applymap(lambda s:s.lower() if type(s) == str else s) 

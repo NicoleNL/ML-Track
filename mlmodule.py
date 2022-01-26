@@ -313,7 +313,8 @@ def supervised_lng(df,outpath,target,test_size,ngram_range=None,fe_type=None,mod
         cf_matrix = pd.concat([cf_matrix,class_acc],axis=1).sort_values(by=['Accuracy %'], ascending=ascend)
     logger.info("supervised_lng ends")     
      
-    cf_matrix.to_csv(outpath+"Confusion_Matrix_ML.csv",index=False)  
+    # cf_matrix.to_csv(outpath+"Confusion_Matrix_ML.csv",index=False) 
+    cf_matrix.to_csv(outpath+"Confusion_Matrix_ML.csv")
     logger.info("Confusion matrix saved in %s as Confusion_Matrix_ML.csv",outpath)
     
 #Deep Learning 
@@ -436,7 +437,8 @@ def deep_lng(df,outpath,target,test_size,ngram_range,fe_type,hidden_layer_sizes=
         cf_matrix = pd.concat([cf_matrix,class_acc],axis=1).sort_values(by=['Accuracy %'], ascending=ascend)
     logger.info("deep_lng ends")          
     
-    cf_matrix.to_csv(outpath+"Confusion_Matrix_DL.csv",index=False)   
+    # cf_matrix.to_csv(outpath+"Confusion_Matrix_DL.csv",index=False)
+    cf_matrix.to_csv(outpath+"Confusion_Matrix_DL.csv")
     logger.info("Confusion matrix saved in %s as Confusion_Matrix_DL.csv",outpath)
 #similarity metrics
 
