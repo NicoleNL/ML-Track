@@ -1,15 +1,15 @@
 {
-        "data_path": "/tmp/nchong/ML_Track/Data/",
-        "log_path": "/tmp/nchong/ML_Track/output/",
+        "data_path": "/tmp/dsabf/processing/DataIngestion/IVE/",
+	"log_path":"/nfs/site/disks/fpga_00003/IVE/Supervised/",        
         "outpath": {
                 "user": {
                         "enable": true,
-                        "user_outpath": "/tmp/nchong/ML_Track/output/"
+                        "user_outpath": "/nfs/site/disks/fpga_00003/IVE/Supervised/"			
                 },
                 "elk": {
                         "enable": false,
-                        "elk_outpath": "/tmp/nchong/ML_Track/output/"
+                        "elk_outpath": "/tmp/dsabf/processing/AIML/"		        
                 }
         },
-        "package_path": "/tmp/nchong/ML_Track/"
+        "package_path": "/tmp/dsabf/code/AIML/packages/"
 }

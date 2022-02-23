@@ -1,7 +1,10 @@
 "data_path" : path where data is stored and loaded from 
-"log_path": path to store the logs
-"outpath": path to store the output (can be "user" to store in user output path or "elk" in ELK output path). 
-	   -> "enable"[true/false]: true to enable, false to disable
-	   -> "user_outpath": specify user output path if "enable": true in "user"
-	   -> "elk_outpath": specify ELK output path if "enable": true in "elk"
-"package_path": path where the nltk and spacy model packages are stored
+"log_path": subfolder path to store the logs in shared folder /nfs/site/disks/fpga_00003/
+"outpath": path to store the output (depending on the track chosen by user). 
+	   -> "user" to store in user output path in shared folder /nfs/site/disks/fpga_00003/ (if user chose Data -> AIML  track)
+              - "enable": Choose true to enable or false to disable
+	      - "user_outpath": specify user output path in shared folder
+	   -> "elk" in ELK output path (for unsupervised learning only where user choose Data -> AIML -> ELK track) 
+	      - "enable": Choose true to enable or false to disable
+	      - "elk_outpath": specify ELK output path 
+"package_path": path where the nltk and spacy model packages are stored (default is "/tmp/dsabf/code/AIML/packages/")
