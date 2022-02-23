@@ -15,7 +15,7 @@ import warnings
 logger = logging.getLogger("MLTrack")
 
 #unsupervised learning
-def kmeans_clustering(column,outpath,top_n_terms,ngram_range=None,fe_type=None,n_clusters=None,max_n_clusters=None):
+def kmeans_clustering(column,outpath,top_n_terms,ngram_range=None,fe_type=None,n_clusters=None,max_n_clusters=None,token_pattern = None):
     """
     K- means clustering for unsupervised learning. User can choose either options:
     (1) provide the number of clusters or
@@ -37,7 +37,10 @@ def kmeans_clustering(column,outpath,top_n_terms,ngram_range=None,fe_type=None,n
                                    - ngram_range of (2, 2) means only bigram
     fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
     n_clusters[None/int]: number of clusters. Choose None for option (2)  
-    max_n_clusters[None/int]: max number of clusters. Choose None for option (1)  
+    max_n_clusters[None/int]: max number of clusters. Choose None for option (1) 
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
     """   
     logger.info("kmeans_clustering starts")
         
@@ -47,9 +50,9 @@ def kmeans_clustering(column,outpath,top_n_terms,ngram_range=None,fe_type=None,n
     
     #call feature extraction function    
     ascending = None 
-    X = feature_extraction(column,ngram_range,ascending,fe_type)[0]
+    X = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[0]
     X = X.drop(index='sum')
-    vec_type = feature_extraction(column,ngram_range,ascending,fe_type)[1]
+    vec_type = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[1]
 
     #user provides the number of clusters        
     if n_clusters != None:
@@ -100,7 +103,7 @@ def kmeans_clustering(column,outpath,top_n_terms,ngram_range=None,fe_type=None,n
     logger.info("kmeans_clustering ends")           
     return labels
 
-def lda(column,outpath,n_components,top_n_terms,ngram_range=None):
+def lda(column,outpath,n_components,top_n_terms,ngram_range=None,token_pattern = None):
     """
     LDA for unsupervised learning. Bag of words is selected for feature extraction
     params:
@@ -114,6 +117,10 @@ def lda(column,outpath,n_components,top_n_terms,ngram_range=None):
                                    - [default] ngram_range of (1, 1) means only unigrams, 
                                    - ngram_range of (1, 2) means unigrams and bigrams, 
                                    - ngram_range of (2, 2) means only bigram
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
+                               
     Returns:
     a) Top no of terms(top_n_terms) associated with each cluster 
     b) Dataframe with ID,raw text and cluster (in interface.py)
@@ -123,8 +130,8 @@ def lda(column,outpath,n_components,top_n_terms,ngram_range=None):
     #feature extraction
     ascending = None
     fe_type = "bagofwords"
-    vec_type = feature_extraction(column,ngram_range,ascending,fe_type)[1]
-    vectorized = feature_extraction(column,ngram_range,ascending,fe_type)[2]
+    vec_type = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[1]
+    vectorized = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[2]
 
     # Create object for the LDA class 
     lda_model = LatentDirichletAllocation(n_components, random_state = 42)  
@@ -147,7 +154,7 @@ def lda(column,outpath,n_components,top_n_terms,ngram_range=None):
     
     return topic_results.argmax(axis=1)
 
-def nmf(column,outpath,n_components,top_n_terms,fe_type,ngram_range=None):
+def nmf(column,outpath,n_components,top_n_terms,fe_type,ngram_range=None,token_pattern=None):
     """
     Non-negative matrix factorization for unsupervised learning.
     Returns:
@@ -166,14 +173,17 @@ def nmf(column,outpath,n_components,top_n_terms,fe_type,ngram_range=None):
                                    - [default] ngram_range of (1, 1) means only unigrams, 
                                    - ngram_range of (1, 2) means unigrams and bigrams, 
                                    - ngram_range of (2, 2) means only bigram
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
     """
     logger.info("nmf starts")    
     warnings.simplefilter(action='ignore', category=FutureWarning)
     #feature extraction
     ngram_range = None
     ascending = None
-    vec_type = feature_extraction(column,ngram_range,ascending,fe_type)[1]
-    vectorized = feature_extraction(column,ngram_range,ascending,fe_type)[2]
+    vec_type = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[1]
+    vectorized = feature_extraction(column,ngram_range,ascending,fe_type,token_pattern)[2]
 
     # Create object for the NMF class 
     nmf_model = NMF(n_components,random_state=42)
@@ -575,7 +585,10 @@ def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=N
     
     #concat the columns into one string if there is more than one column 
     if type(column) == pd.DataFrame: 
-        column = column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1) 
+        column = pd.DataFrame(column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1),columns = ["MergedCol"])
+        column = column.replace(' +','', regex=True) #remove multiple whitespaces
+        column = column[(column['MergedCol']!= "")] #remove empty string
+        column= column['MergedCol'] #convert column from df to series
        
     #threshold
     if threshold == None:

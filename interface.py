@@ -8,7 +8,7 @@ import os
 import nltk
 from dataloading import data_loading
 from datapreprocessing import df_manipulation,df_filterrows,word_contractions,lowercase,remove_htmltag_url,remove_irrchar_punc,remove_num,remove_multwhitespace,remove_stopwords,remove_freqwords,remove_rarewords
-from datapreprocessing import custom_taxo,stem_words,lemmatize_words,feature_extraction
+from datapreprocessing import custom_remtaxo,custom_keeptaxo,stem_words,lemmatize_words,feature_extraction
 from mlmodule import kmeans_clustering,lda,nmf,supervised_lng,deep_lng,cosinesimilarity,jaccardsimilarity
 
 #read config file and call the other functions
@@ -142,11 +142,18 @@ def main(projname,config_file,path_config):
         df = remove_htmltag_url(df)
         df_all = pd.concat([df_all,df],axis=1)
         
-    # Custom taxonomy
-    ct = data["DataPreprocessing"]["custom_taxo"]
-    taxo,remove_taxo,include_taxo = ct["enable"], ct["remove_taxo"], ct["include_taxo"]
-    if taxo:
-        df = custom_taxo(df,remove_taxo,include_taxo)
+    # Custom remove taxonomy - User gives taxonomy to remove from data
+    crt = data["DataPreprocessing"]["custom_remtaxo"]
+    remtaxo,remove_taxo,include_taxo = crt["enable"], crt["remove_taxo"], crt["include_taxo"]
+    if remtaxo:
+        df = custom_remtaxo(df,remove_taxo,include_taxo)
+        df_all = pd.concat([df_all,df],axis=1)  
+    
+    # Custom keep taxonomy - User gives taxonomy to keep in data
+    ckt = data["DataPreprocessing"]["custom_keeptaxo"]
+    keeptaxo,keep_taxo = ckt["enable"], ckt["keep_taxo"]
+    if keeptaxo:
+        df = custom_keeptaxo(df,keep_taxo)
         df_all = pd.concat([df_all,df],axis=1)  
         
     #Remove irrelevant characters and punctuation
@@ -221,8 +228,8 @@ def main(projname,config_file,path_config):
     km= data["UnsupervisedLearning"]["kmeans_clustering"]
     kmeans = km["enable"]
     if kmeans:
-        top_n_terms,ngram_range,fe_type,n_clusters,max_n_clusters= km["top_n_terms"],km["ngram_range"],km["fe_type"],km["n_clusters"],km["max_n_clusters"]        
-        df_out["cluster"]=kmeans_clustering(column=df,outpath=outpath,top_n_terms=top_n_terms,ngram_range=ngram_range,fe_type=fe_type,n_clusters=n_clusters,max_n_clusters=max_n_clusters)
+        top_n_terms,ngram_range,fe_type,n_clusters,max_n_clusters,token_pattern= km["top_n_terms"],km["ngram_range"],km["fe_type"],km["n_clusters"],km["max_n_clusters"],km["token_pattern"]        
+        df_out["cluster"]=kmeans_clustering(column=df,outpath=outpath,top_n_terms=top_n_terms,ngram_range=ngram_range,fe_type=fe_type,n_clusters=n_clusters,max_n_clusters=max_n_clusters,token_pattern=token_pattern)
         df_out.to_excel(outpath+"KMeansClustering_output.xlsx",index=False) #write to user folder  
         if path["outpath"]["elk"]["enable"]: #write to ELK folder
             df_out.to_excel(outpath_elk+"KMeansClustering_output.xlsx",index=False)
@@ -234,8 +241,8 @@ def main(projname,config_file,path_config):
     lda_m= data["UnsupervisedLearning"]["lda"]
     LatentDirichletAllocation = lda_m["enable"]
     if LatentDirichletAllocation:
-        n_components,top_n_terms,ngram_range= lda_m["n_components"],lda_m["top_n_terms"],lda_m["ngram_range"]       
-        df_out["cluster"]=lda(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,ngram_range=ngram_range)            
+        n_components,top_n_terms,ngram_range,token_pattern= lda_m["n_components"],lda_m["top_n_terms"],lda_m["ngram_range"],lda_m["token_pattern"]       
+        df_out["cluster"]=lda(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,ngram_range=ngram_range,token_pattern=token_pattern)            
         df_out.to_excel(outpath+"LatentDirichletAllocation_output.xlsx",index=False)  #write to user folder 
         if path["outpath"]["elk"]["enable"]: #write to ELK folder
             df_out.to_excel(outpath_elk+"LatentDirichletAllocation_output.xlsx",index=False)
@@ -247,8 +254,8 @@ def main(projname,config_file,path_config):
     nmf_m= data["UnsupervisedLearning"]["nmf"]
     NonNegativeMatrixFactorization = nmf_m["enable"]
     if NonNegativeMatrixFactorization:
-        n_components,top_n_terms,fe_type,ngram_range= nmf_m["n_components"],nmf_m["top_n_terms"],nmf_m["fe_type"],nmf_m["ngram_range"]
-        df_out["cluster"]=nmf(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,fe_type=fe_type,ngram_range=ngram_range)              
+        n_components,top_n_terms,fe_type,ngram_range,token_pattern= nmf_m["n_components"],nmf_m["top_n_terms"],nmf_m["fe_type"],nmf_m["ngram_range"],nmf_m["token_pattern"]
+        df_out["cluster"]=nmf(column=df,outpath=outpath,n_components=n_components,top_n_terms=top_n_terms,fe_type=fe_type,ngram_range=ngram_range,token_pattern=token_pattern)              
         df_out.to_excel(outpath+"NonNegativeMatrixFactorization_output.xlsx",index=False) #write to user folder 
         if path["outpath"]["elk"]["enable"]: #write to ELK folder 
             df_out.to_excel(outpath_elk +"NonNegativeMatrixFactorization_output.xlsx",index=False)

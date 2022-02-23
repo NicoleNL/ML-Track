@@ -3,65 +3,78 @@
                 "start_date": null,
                 "stop_date": null
         },
-        "DataPreprocessing": {		
+        "DataPreprocessing": {			
                 "df_manipulation": {
                         "how": null,
                         "col_selection": [
                                 "id",
-                                "description"
+                                "description",
+				"comments",
+				"title"
                         ],
                         "keep": null,
                         "subset": null
-                },
+                },  
+                "df_filterrows": {
+                        "enable": true,
+                        "col": "component_affected",
+                        "keep_list": null, 
+                        "drop_list": ["other","bios,other","fw.nvmem,other","hw.pcie,other","hw.pmc,other","ip.fivr,other","other,val.env.tool"]
+                },	              
                 "target": {
                         "enable": false,
-                        "column": "problem_area"
+                        "column": null
                 },
                 "word_contractions": {
-                        "enable": true
+                        "enable": false
                 },
                 "lowercase": {
-                        "enable": true
+                        "enable": false
                 },
                 "remove_htmltag_url": {
-                        "enable": true
+                        "enable": false
                 },
-                "remove_irrchar_punc": {
+		"custom_remtaxo": {
+                        "enable": false,
+                        "remove_taxo": null,
+                        "include_taxo": null
+                },
+		"custom_keeptaxo": {
                         "enable": true,
+                        "keep_taxo": [
+                                "((?:[a-z]\\w+\\.){2,}[a-z]\\w+)(?=\\s)",
+                                "(?!.*(gz|bz2|intel\\.com)$).*"
+                        ]                               
+		},
+                "remove_irrchar_punc": {
+                        "enable": false,
                         "char": null
                 },
                 "remove_num": {
-                        "enable": true
+                        "enable": false
                 },
                 "remove_multwhitespace": {
-                        "enable": true
+                        "enable": false
                 },
                 "remove_stopwords": {
-                        "enable": true,
-                        "extra_sw": ["hi"],
+                        "enable": false,
+                        "extra_sw": null,
                         "remove_sw": null
                 },
                 "remove_freqwords": {
-                        "enable": true,
+                        "enable": false,
                         "n": 10
                 },
                 "remove_rarewords": {
-                        "enable": true,
+                        "enable": false,
                         "n": 10
-                },
-                "custom_taxo": {
-                        "enable": true,
-                        "remove_taxo": "test \\w+",
-                        "include_taxo": [
-                                "test suite execution"
-                        ]
-                },
+                },                
                 "stem_words": {
                         "enable": false,
                         "stemmer_type": null
                 },
                 "lemmatize_words": {
-                        "enable": true,
+                        "enable": false,
                         "lemma_type": null
                }
         },
@@ -71,21 +84,24 @@
                         "top_n_terms": 10,
                         "ngram_range": null,
                         "fe_type": null,
-                        "n_clusters": 5,
-                        "max_n_clusters": null
+                        "n_clusters": null,
+                        "max_n_clusters": 300,
+			"token_pattern": "((?:[a-z]\\w+\\.){2,}[a-z]\\w+)(?=\\s)"
                 },
                 "lda": {
-                        "enable": true,
-                        "n_components": 5,
-                        "top_n_terms": 10,
-                        "ngram_range": null
-                },
-                "nmf": {
-                        "enable": true,
-                        "n_components": 5,
+                        "enable": false,
+                        "n_components": null,
                         "top_n_terms": 10,
                         "ngram_range": null,
-                        "fe_type": null
+			"token_pattern": "((?:[a-z]\\w+\\.){2,}[a-z]\\w+)(?=\\s)"
+                },
+                "nmf": {
+                        "enable": false,
+                        "n_components": null,
+                        "top_n_terms": 10,
+                        "ngram_range": null,
+                        "fe_type": null,
+			"token_pattern": "((?:[a-z]\\w+\\.){2,}[a-z]\\w+)(?=\\s)"
                 }
         },
         "SupervisedLearning": {
@@ -104,7 +120,7 @@
                         "test_size": 0.3,
                         "ngram_range": null,
                         "fe_type": null,
-                        "hidden_layer_sizes": 5,
+                        "hidden_layer_sizes": null,
                         "activation": null,
                         "solver": null,
                         "learning_rate": null,
@@ -114,8 +130,8 @@
         },
         "SimilarityMetrics": {
                 "cosinesimilarity": {
-                        "enable": true,
-                        "threshold": null,
+                        "enable": false,
+                        "threshold": 0,
                         "total_rows": 10,
                         "base_row": null,
                         "ngram_range": null,
@@ -123,8 +139,8 @@
                         "ascending": null
                 },
                 "jaccardsimilarity": {
-                        "enable": true,
-                        "threshold": null,
+                        "enable": false,
+                        "threshold": 0,
                         "total_rows": 10,
                         "base_row": null,
                         "ascending": null

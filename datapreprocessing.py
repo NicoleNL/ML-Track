@@ -298,7 +298,7 @@ def remove_rarewords(df,n):
     
     return df
 
-def custom_taxo(df,remove_taxo,include_taxo):
+def custom_remtaxo(df,remove_taxo,include_taxo):
     """
     User provides taxonomy to be removed from the text. 
     a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
@@ -377,6 +377,69 @@ def custom_taxo(df,remove_taxo,include_taxo):
            
     return df    
 
+def custom_keeptaxo(df,keep_taxo):
+    """
+    User provides taxonomy to be kept in the text, the rest of the taxonomy will be omitted. User can choose to do one 
+    or multi stage filtering on the taxonomy
+    
+    df[DataFrame]: input dataframe
+    keep_taxo[regex/list of regex]: use regex/list of regex to filter the taxonomy to keep
+        regex : only one regex in keep_taxo to filter the taxonomy; i.e "[\w+\.]+\w+@intel.com"
+        list of regex: use list of regex to filter the taxonomy for multi stage filter 
+        i.e. ["[\w+\.]+\w+@intel.com","@intel.com","@intel","intel"]
+        
+    """        
+    import re
+    import pandas as pd 
+    logger.info("custom_keeptaxo starts")
+          
+    logger.info("User input the regex:" + str(keep_taxo))
+    if type(keep_taxo) == str:
+        logger.info("Single stage filtering of taxonomy selected")
+    else:
+        logger.info("Multi stage filtering of taxonomy selected")
+        
+    
+    def taxo_tokeep(text,keep_taxo):
+        """
+        Convert the taxo in keep_taxo to string and return the string  
+        """
+        #keep_taxo given as regex, get the list of words to keep in text according to regex
+        if type(keep_taxo) == str:             
+            keep_taxo = re.findall(keep_taxo,text)
+            text = " ".join(str(word) for word in keep_taxo) # convert list to string    
+        else:
+            #loop through list of regex for multi stage filtering on the text 
+            match_list = []    
+            keep_taxo_list = re.findall(keep_taxo[0],text) #for first regex, get all the matches in a list
+#             logger.info("Matches for first regex:", keep_taxo_list)
+            #for second regex onwards, check each term in keep_taxo_list whether it matches the second regex    
+            for tax in keep_taxo[1:]: 
+                for i in keep_taxo_list:            
+                    match = re.match(tax,i) #use match instead of findall which does not work with negation regex
+                    if match:                         
+                        match_list.append(match[0])
+                
+                text = " ".join(str(word) for word in match_list) # convert list to string  
+                                
+        return text    
+        
+    df = df.applymap(lambda text: taxo_tokeep(text,keep_taxo)) 
+    df = df.add_suffix('_keeptaxo')
+    
+    logger.info("Get the taxonomies maintained in the texts")
+    df_list =[]
+    for col in df:        
+        df_list.extend(list(df[col]))
+    
+    while("" in df_list) :
+        df_list.remove("")
+        
+    logger.info("The taxonomies maintained in the texts: %s",list(set(df_list)))    
+    logger.info("custom_keeptaxo ends")
+           
+    return df    
+
 def stem_words(df,stemmer_type):
     """
     Stemming words. Default option is Porter Stemmer, alternative option is Lancaster Stemmer 
@@ -427,7 +490,7 @@ def lemmatize_words(df,package_path,lemma_type):
     
     return df
 
-def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
+def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None,token_pattern = None):
     """
     Feature extraction methods - TF-IDF[DEFAULT] or Bag of words
      
@@ -443,27 +506,41 @@ def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)                               
     fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
-    
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
     """
     logger.info("feature_extraction starts")        
     
     if type(column) == pd.DataFrame: #concat the columns into one string if there is more than one column 
-        column = column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1)
-         
-           
+        column = column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1)         
+    
+        
     if ngram_range == None: #set ngram range as unigram by default
         ngram_range=(1,1)
         
     if fe_type == "bagofwords":      
         logger.info("BagofWords selected as feature extraction method") 
-        vec_type = CountVectorizer(ngram_range=ngram_range, analyzer='word')
+        if token_pattern == None:
+            logger.info("Default token pattern used")
+            vec_type = CountVectorizer(ngram_range=ngram_range, analyzer='word')
+        else:
+            logger.info("Token pattern used to split the text in feature extraction: %s", token_pattern)
+            vec_type = CountVectorizer(ngram_range=ngram_range, analyzer='word',token_pattern = token_pattern)
+            
         vectorized = vec_type.fit_transform(column)
         df = pd.DataFrame(vectorized.toarray(), columns=vec_type.get_feature_names())
         df.loc['sum'] = df.sum(axis=0).astype(int)
 
     if fe_type == None: #tfidf   
         logger.info("TF-IDF selected as feature extraction method")  
-        vec_type = TfidfVectorizer(ngram_range=ngram_range, analyzer='word')
+        if token_pattern == None:
+            logger.info("Default token pattern used")
+            vec_type = TfidfVectorizer(ngram_range=ngram_range, analyzer='word')
+        else:
+            logger.info("Token pattern used to split the text in feature extraction: %s", token_pattern)
+            vec_type = CountVectorizer(ngram_range=ngram_range, analyzer='word',token_pattern = token_pattern)
+            
         vectorized = vec_type.fit_transform(column)
         df = pd.DataFrame(vectorized.toarray(), columns=vec_type.get_feature_names())
         df.loc['sum'] = df.sum(axis=0)
@@ -478,6 +555,7 @@ def feature_extraction(column,ngram_range=None,ascending=None,fe_type=None):
     logger.info("feature_extraction ends")
     
     return df,vec_type,vectorized
+
 
 ### Additional code####
 ### Custom taxonomy with NER###
