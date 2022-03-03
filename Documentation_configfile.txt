@@ -7,7 +7,6 @@ a) Load all json files following the agreed filename format
 b) Load only json files from specific dates by adding the start and stop dates (Note: Both start_date and
    stop_date must be used together)
 params:
-    path [string]: path of the files, without filename
     start_date[None/string in YYYY-MM-DD format](optional,default is None): 
     User can choose to load files starting from start_date
     - None: no start_date is provided, all files are loaded
@@ -21,8 +20,7 @@ params:
 
 Remove noise and clean the text data. 
 Functions consist of dataframe manipulation (compulsory), target (Only for supervised learning), word contractions, lowercase, 
-removing html tag, url, irrelevant characters and punctuation, numeric data, multiple white spaces, stopwords, frequent words, rare words, 
-user provides taxonomy to be removed or remained in the text, stemming and lemmatization of words. 
+removing html tag, url, user provides taxonomy to be removed, user provides taxonomy to be remained in the text, irrelevant characters and punctuation, numeric data, multiple white spaces, stopwords, frequent words, rare words, stemming and lemmatization of words. 
 All functions are optional, except df_manipulation. User can specify Enable: true to enable the optional function. 
 
 (A) df_manipulation
@@ -45,44 +43,73 @@ All functions are optional, except df_manipulation. User can specify Enable: tru
                         # - null : Drop all duplicates.
     subset[list/null]: Subset of columns for dropping NA and identifying duplicates, use null if no column to select
 
-(B) target 
+(B) df_filterrows 
+    Keep or drop row(s) in a column by providing the list of elements in the row(s)
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    col[string]: input column name in which the row(s) within are to be kept/dropped
+    keep_list[list/None]: list - input list of rows to be kept, None - when using drop_list
+    drop_list[list/None]: list - input list of rows to be dropped, None - when using keep_list
+    Example: To keep/drop the rows ['hw.sa', 'fw.qcode'] in the column “component_affected"
+
+(C) target 
     Only enable when using supervised learning. For similarity metrics and unsupervised specify "enable": false. 
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
     column[string]: User can specify the target, example "problem_area"
 
-(C) word_contractions
+(D) word_contractions
     Expand word contractions (i.e. "isn't" to "is not")
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
 
-(D) lowercase 
+(E) lowercase 
     Convert all characters to lower case
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
 
-(E) remove_htmltag_url
+(F) remove_htmltag_url
     Remove html tag and url
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
 
-(F) remove_irrchar_punc    
+(G) custom_remtaxo
+    Remove taxonomy from the text: 
+    a) Remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
+    b) Remove taxonomies but wants the same taxonomy to remain in certain phrases 
+    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies or regex to be removed in remove_taxo 
+    and list of phrases for the taxonomy to remain in include_taxo
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
+    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in 
+
+(H) custom_keeptaxo
+    Keep taxonomy in the text. Rest of the taxonomy will be omitted. One or multi stage filtering on the taxonomy
+    params:
+    enable[true/false]: true is to enable the function and false is to disable the function
+    keep_taxo[regex/list of regex]: use regex/list of regex to filter the taxonomy to keep
+        regex : only one regex in keep_taxo to filter the taxonomy; i.e "[\w+\.]+\w+@intel.com"
+        list of regex: use list of regex to filter the taxonomy for multi stage filter 
+        i.e. ["[\w+\.]+\w+@intel.com","@intel.com","@intel","intel"]
+
+(I) remove_irrchar_punc    
     Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex format.    
     params:    
     enable[true/false]: true is to enable the function and false is to disable the function
     char[string/null] (optional): string is input regex of characters to be removed and null is no characters to be removed
 
-(G) remove_num
+(J) remove_num
     Remove numeric data
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
 
-(H) remove_multwhitespace    
+(K) remove_multwhitespace    
     Remove multiple white spaces
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
 
-(I) remove_stopwords  
+(L) remove_stopwords  
     Removes English stopwords (words that do not provide any useful information to decide in which category a text should be classified eg. the, is, at). 
     Optional: user can add own stopwords or remove words from English stopwords  
     The stopwords that are removed from the text will be printed in the logs 
@@ -91,33 +118,21 @@ All functions are optional, except df_manipulation. User can specify Enable: tru
     extra_sw [list/null] (optional): list of words/phrase to be added to the stop words, if null is chosen there is no extra stopwords
     remove_sw [list/null] (optional): list of words to be removed from the stop words, if null is chosen there is no remove stopwords
 
-(J) remove_freqwords
+(M) remove_freqwords
     Remove n frequent words, the frequent words that are removed from the text will be printed in the logs 
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
     n [integer]: input number of frequent words to be removed
 
-(K) remove_rarewords 
+(N) remove_rarewords 
     Remove n rare words, the rare words that are removed from the text will be printed in the logs 
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
     n [integer]: input number of rare words to be removed
 
-(L) custom_taxo 
-    User provides taxonomy to be removed from the text. 
-    The list of taxonomy that are removed from the text will be printed in the logs 
-    a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
-    b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
-    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies 
-    or regex to be removed in remove_taxo and list of phrases for the taxonomy to remain in include_taxo
-    params:
-    enable[true/false]: true is to enable the function and false is to disable the function
-    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
-    include_taxo[list/null](optional): list of phrases for the taxonomy to remain in text or if null is chosen there is no taxonomy 
-
 CHOOSE (M) for stemming or (N) for lemmatization only. User should not choose both (M) and (N) as both methods will generate root form of words. 
     
-(M) stem_words
+(O) stem_words
     Stemming words. Default option is Porter Stemmer, alternative option is Lancaster Stemmer  
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
@@ -125,7 +140,7 @@ CHOOSE (M) for stemming or (N) for lemmatization only. User should not choose bo
                                 - null for Porter Stemmer (default option)
                                 - "Lancaster" for Lancaster Stemmer (alternative option)
 
-(N) lemmatize_words 
+(P) lemmatize_words 
     Lemmatize words: Default option is WordNetLemmatizer, alternative option is Spacy 
     params:
     enable[true/false]: true is to enable the function and false is to disable the function
@@ -165,9 +180,12 @@ UnsupervisedLearning (for data without target), text will be grouped into cluste
                                        - null (default) where ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     n_clusters[null/int]: number of clusters. Choose null for option (2)
     max_n_clusters[null/int]: max number of clusters. null for option (1)
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
 
 (B) lda
     LDA for unsupervised learning. Bag of words is selected for feature extraction
@@ -182,6 +200,9 @@ UnsupervisedLearning (for data without target), text will be grouped into cluste
                                        - null (default) where ngram_range of (1, 1) means only unigrams,  
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
 
 
 (C) nmf 
@@ -197,7 +218,10 @@ UnsupervisedLearning (for data without target), text will be grouped into cluste
                                        - null (default) where ngram_range of (1, 1) means only unigrams,  
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
 
 ###---------------- Supervised Learning --------------------- ###
 
@@ -215,7 +239,7 @@ SupervisedLearning (for data with target only)
                                        - null is default where ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     model_type[null/string]: Choose ML algorithm 
                             - null (Default algorithm is Random Forest)
                             - 'NB'(To choose Naive Bayes as ML algorithm), 
@@ -236,7 +260,7 @@ SupervisedLearning (for data with target only)
                                        - null is default where ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     hidden_layer_sizes[int/list/null],default(null) = 100: To set the number of layers and the number of nodes.
                                                Each integer represents the number of nodes, length of integer separated by comma denotes the total number of hidden layers in the network
 					       For example: a) Example 1: hidden_layer_sizes= 100 represents 100 nodes with one hidden layer only
@@ -271,7 +295,7 @@ SimilarityMetrics (for data without target), text will be compared with other ro
                                        - null is default where ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/null]: Feature extraction type: Choose null for default tfidf method or "bagofwords" for bow 
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     ascending [true/false/null]: - [default] null (words arranged in alphabetical order)
                                  - true(words arranged in ascending order of sum), 
                                  - false(words arranged in descending order of sum) 

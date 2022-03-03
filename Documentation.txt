@@ -59,57 +59,31 @@ A)  df_manipulation
     subset[list/None]: list: Subset of columns for dropping NA and identifying duplicates, 
                        None[DEFAULT]: if no column to select
 
-B)  word_contractions
+B) df_filterrows 
+    User can choose to keep or drop row(s) in a column by providing the list of elements in the row(s)
+    params:
+    df [dataframe]: input dataframe 
+    col[string]: input column name in which the row(s) within are to be kept/dropped
+    keep_list[list/None]: list - input list of rows to be kept, None - when using drop_list
+    drop_list[list/None]: list - input list of rows to be dropped, None - when using keep_list
+    Example: To keep/drop the rows ['hw.sa', 'fw.qcode'] in the column “component_affected"
+
+C)  word_contractions
     Expand word contractions (i.e. "isn't" to "is not")
     params:
     df [dataframe]: input dataframe 
 
-C)  lowercase
+D)  lowercase
     Convert all characters to lower case
     params:
     df [dataframe]: input dataframe 
 
-D)  remove_htmltag_url
+E)  remove_htmltag_url
     Remove html tag and url
     params:
     df [dataframe]: input dataframe 
 
-E)  remove_irrchar_punc
-    Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex format  
-    params:    
-    df [dataframe]: input dataframe 
-    char[string/None]: input regex of characters to be removed
-
-F)  remove_num
-    Remove numeric data
-    params:
-    df [dataframe]: input dataframe 
-
-G)  remove_multwhitespace
-    Remove multiple white spaces
-    params:
-    df [dataframe]: input dataframe 
-
-H)  remove_stopwords
-    Removes English stopwords. Optional: user can add own stopwords or remove words from English stopwords  
-    params:
-    df [dataframe]: input dataframe 
-    extra_sw [list] (optional): list of words/phrase to be added to the stop words 
-    remove_sw [list] (optional): list of words to be removed from the stop words 
-
-I)  remove_freqwords
-    Remove n frequent words
-    params:
-    df [dataframe]: input dataframe 
-    n [integer]: input number of frequent words to be removed
-
-J)  remove_rarewords
-    Remove n rare words
-    params:
-    df [dataframe]: input dataframe 
-    n [integer]: input number of rare words to be removed
-
-K)  custom_taxo
+F) custom_remtaxo
     User provides taxonomy to be removed from the text. 
     a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
     b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
@@ -118,9 +92,53 @@ K)  custom_taxo
     params:
     df [dataframe]: input dataframe
     remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
-    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in text
+    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in 
 
-L)  stem_words
+G) custom_keeptaxo
+    User provides taxonomy to be kept in the text, the rest of the taxonomy will be omitted. User can choose to do one 
+    or multi stage filtering on the taxonomy
+    df[DataFrame]: input dataframe
+    keep_taxo[regex/list of regex]: use regex/list of regex to filter the taxonomy to keep
+        regex : only one regex in keep_taxo to filter the taxonomy; i.e "[\w+\.]+\w+@intel.com"
+        list of regex: use list of regex to filter the taxonomy for multi stage filter 
+        i.e. ["[\w+\.]+\w+@intel.com","@intel.com","@intel","intel"]
+
+H)  remove_irrchar_punc
+    Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex format  
+    params:    
+    df [dataframe]: input dataframe 
+    char[string/None]: input regex of characters to be removed
+
+I)  remove_num
+    Remove numeric data
+    params:
+    df [dataframe]: input dataframe 
+
+J)  remove_multwhitespace
+    Remove multiple white spaces
+    params:
+    df [dataframe]: input dataframe 
+
+K)  remove_stopwords
+    Removes English stopwords. Optional: user can add own stopwords or remove words from English stopwords  
+    params:
+    df [dataframe]: input dataframe 
+    extra_sw [list] (optional): list of words/phrase to be added to the stop words 
+    remove_sw [list] (optional): list of words to be removed from the stop words 
+
+L)  remove_freqwords
+    Remove n frequent words
+    params:
+    df [dataframe]: input dataframe 
+    n [integer]: input number of frequent words to be removed
+
+M)  remove_rarewords
+    Remove n rare words
+    params:
+    df [dataframe]: input dataframe 
+    n [integer]: input number of rare words to be removed
+
+N)  stem_words
     Stemming words. Default option is Porter Stemmer, alternative option is Lancaster Stemmer 
     params:
     df [dataframe]: input dataframe 
@@ -128,7 +146,7 @@ L)  stem_words
                                 - None for Porter Stemmer
                                 - "Lancaster" for Lancaster Stemmer 
 
-M)  lemmatize_words
+O)  lemmatize_words
     Lemmatize words: Default option is WordNetLemmatizer, alternative option is Spacy 
     params:
     column[series]: input series/column to be lemmatized
@@ -136,7 +154,7 @@ M)  lemmatize_words
                             - None for WordNetLemmatizer
                             - "Spacy" for Spacy    
 
-N)  feature_extraction 
+P)  feature_extraction 
     Feature extraction methods - TF-IDF[DEFAULT] or Bag of words
     params:
     column [series/DataFrame]: column selected for feature extraction 
@@ -149,7 +167,7 @@ N)  feature_extraction
     ascending [True/False/None]: - [DEFAULT] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)                               
-    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
 
 
 #------3) ML Module------#
@@ -176,9 +194,12 @@ i)  kmeans_clustering (default method)
                                    - [DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                    - ngram_range of (1, 2) means unigrams and bigrams, 
                                    - ngram_range of (2, 2) means only bigram
-    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     n_clusters[None/int]: number of clusters. Choose None for option (2)  
     max_n_clusters[None/int]: max number of clusters. Choose None for option (1)  
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
 
 ii) lda (optional)
     LDA for unsupervised learning. Bag of words is selected for feature extraction
@@ -196,6 +217,9 @@ ii) lda (optional)
                                    - [default] ngram_range of (1, 1) means only unigrams, 
                                    - ngram_range of (1, 2) means unigrams and bigrams, 
                                    - ngram_range of (2, 2) means only bigram
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
 
 
 iii)nmf (optional)  
@@ -210,11 +234,15 @@ iii)nmf (optional)
     outpath[string]: path to write the outputs
     n_components[int]: the number of topics/clusters used in NMF
     top_n_terms[int]: the top n terms in each topic/cluster to be printed out
-    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
                                    - [default] ngram_range of (1, 1) means only unigrams, 
                                    - ngram_range of (1, 2) means unigrams and bigrams, 
                                    - ngram_range of (2, 2) means only bigram
+    token_pattern[regex/None]: None: default regexp select tokens of 2 or more alphanumeric characters 
+                               (punctuation is completely ignored and always treated as a token separator).
+                               regex: Regular expression denoting what constitutes a “token"
+
 
 b) Supervised learning
 i) supervised_lng
@@ -230,7 +258,7 @@ i) supervised_lng
                                        -[DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-   fe_type[None/string]: Feature extraction type: Choose "bagofwords" or None for default tfidf method
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
    model_type[None/string]: Choose ML algorithm 
                             - None (Default algorithm is Random Forest)
                             - 'NB'(To choose Naive Bayes as ML algorithm), 
@@ -252,7 +280,7 @@ ii) deep_lng
                                        - ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string]: Feature extraction type: Choose "bagofwords" or "tfidf" method
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
     hidden_layer_sizes[tuple],default(None) = (100): To set the number of layers and the number of nodes.
                                                Each element in the tuple represents the number of nodes,
                                                length of tuple denotes the total number of hidden layers in the network
@@ -286,7 +314,7 @@ i) cosinesimilarity
                                        -[DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[None/string]: Feature extraction type: Choose "bagofwords" or None for tfidf[DEFAULT]
+    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method      
     ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)
