@@ -148,6 +148,148 @@ def remove_htmltag_url(df):
     
     return df
 
+def custom_remtaxo(df,remove_taxo,include_taxo):
+    """
+    User provides taxonomy to be removed from the text. 
+    a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
+    b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
+    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies or regex to be removed in remove_taxo 
+    and list of phrases for the taxonomy to remain in include_taxo
+    
+    params:
+    df [dataframe]: input dataframe
+    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
+    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in 
+    """
+    
+    import re
+    import pandas as pd 
+    logger.info("custom_taxo starts")
+    def convert(text,remove_taxo):  
+        """
+        Uses regex given in remove_taxo to find and return all matches 
+        """
+        match = re.findall(remove_taxo,text)
+        if match:                 
+            new_row = {'Match':match}
+            return(new_row)
+        
+    #if remove_taxo is regex call convert function to get all matches as a list
+    if type(remove_taxo) == str: 
+        # logger.info("User input the regex:",remove_taxo)
+        logger.info("User input the regex:"+ remove_taxo)
+        cv_list = []
+        for i in range(len(df.columns)):
+            for text in df.iloc[:,i]:
+                cv = convert(text,remove_taxo)
+                if cv:
+                    cv_list.append(cv)
+        #             print(cv_list)
+
+        cv_df = pd.DataFrame(cv_list)
+        remove_taxo = list(cv_df["Match"].apply(pd.Series).stack().unique())
+        logger.info("Remove_taxo_list: %s",remove_taxo)
+        
+    def taxo(text,remove_taxo,include_taxo): 
+        if remove_taxo != None and include_taxo != None: #user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases (i.e remove "test" but remain "test" in "test cyccle")
+
+            for w in remove_taxo:
+            #row without any item from include_taxo -> replace all remove_taxo items with empty string
+                if all(phrase not in text for phrase in include_taxo): 
+                    pattern = r'\b'+w+r'\b'
+                    text = re.sub(pattern,' ', text) 
+                #row with any item from include_taxo -> only replace remove_taxo item that is not in include_taxo
+                else: 
+                    if all(w not in phrase for phrase in include_taxo):
+                        pattern = r'\b'+w+r'\b'
+                        text = re.sub(pattern,' ', text) 
+                        
+        if remove_taxo != None and include_taxo == None: #user wants to remove taxonomies only:
+            for w in remove_taxo: #remove_taxo in list of words
+                pattern = r'\b'+w+r'\b'
+                text = re.sub(pattern,' ', text)
+                 
+        return text 
+    
+    
+    df = df.applymap(lambda text: taxo(text,remove_taxo,include_taxo))     
+    df = df.add_suffix('_taxo')
+     
+    if remove_taxo != None and include_taxo != None:
+        logger.info("User wants to remove taxonomies but wants the same taxonomy to remain in certain phrases")
+        logger.info("Taxonomies removed: %s",remove_taxo)
+        logger.info("Taxonomies remain in phrases: %s",include_taxo) 
+    if remove_taxo != None and include_taxo == None: 
+        logger.info("user wants to remove taxonomies only")
+        logger.info("Taxonomies removed: %s",remove_taxo)
+        
+    logger.info("custom_taxo ends")
+           
+    return df    
+
+def custom_keeptaxo(df,keep_taxo):
+    """
+    User provides taxonomy to be kept in the text, the rest of the taxonomy will be omitted. User can choose to do one 
+    or multi stage filtering on the taxonomy
+    
+    df[DataFrame]: input dataframe
+    keep_taxo[regex/list of regex]: use regex/list of regex to filter the taxonomy to keep
+        regex : only one regex in keep_taxo to filter the taxonomy; i.e "[\w+\.]+\w+@intel.com"
+        list of regex: use list of regex to filter the taxonomy for multi stage filter 
+        i.e. ["[\w+\.]+\w+@intel.com","@intel.com","@intel","intel"]
+        
+    """        
+    import re
+    import pandas as pd 
+    logger.info("custom_keeptaxo starts")
+          
+    logger.info("User input the regex:" + str(keep_taxo))
+    if type(keep_taxo) == str:
+        logger.info("Single stage filtering of taxonomy selected")
+    else:
+        logger.info("Multi stage filtering of taxonomy selected")
+        
+    
+    def taxo_tokeep(text,keep_taxo):
+        """
+        Convert the taxo in keep_taxo to string and return the string  
+        """
+        #keep_taxo given as regex, get the list of words to keep in text according to regex
+        if type(keep_taxo) == str:             
+            keep_taxo = re.findall(keep_taxo,text)
+            text = " ".join(str(word) for word in keep_taxo) # convert list to string    
+        else:
+            #loop through list of regex for multi stage filtering on the text 
+            match_list = []    
+            keep_taxo_list = re.findall(keep_taxo[0],text) #for first regex, get all the matches in a list
+#             logger.info("Matches for first regex:", keep_taxo_list)
+            #for second regex onwards, check each term in keep_taxo_list whether it matches the second regex    
+            for tax in keep_taxo[1:]: 
+                for i in keep_taxo_list:            
+                    match = re.match(tax,i) #use match instead of findall which does not work with negation regex
+                    if match:                         
+                        match_list.append(match[0])
+                
+                text = " ".join(str(word) for word in match_list) # convert list to string  
+                                
+        return text    
+        
+    df = df.applymap(lambda text: taxo_tokeep(text,keep_taxo)) 
+    df = df.add_suffix('_keeptaxo')
+    
+    logger.info("Get the taxonomies maintained in the texts")
+    df_list =[]
+    for col in df:        
+        df_list.extend(list(df[col]))
+    
+    while("" in df_list) :
+        df_list.remove("")
+        
+    logger.info("The taxonomies maintained in the texts: %s",list(set(df_list)))    
+    logger.info("custom_keeptaxo ends")
+           
+    return df    
+
 def remove_irrchar_punc(df,char=None):
     """
     Remove irrelevant characters and punctuation. Optional: User can specify special characters to be removed in regex
@@ -298,147 +440,7 @@ def remove_rarewords(df,n):
     
     return df
 
-def custom_remtaxo(df,remove_taxo,include_taxo):
-    """
-    User provides taxonomy to be removed from the text. 
-    a) user wants to remove taxonomies only -> input a list of taxonomies or regex to be removed in remove_taxo 
-    b) user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases 
-    (i.e remove "test" from text but want "test" to remain in "test cycle") -> input a list of taxonomies or regex to be removed in remove_taxo 
-    and list of phrases for the taxonomy to remain in include_taxo
-    
-    params:
-    df [dataframe]: input dataframe
-    remove_taxo[list/regex]: list of taxonomies or regex(i.e. r'test \w+') to be removed from text 
-    include_taxo[list/None](optional): list of phrases for the taxonomy to remain in 
-    """
-    
-    import re
-    import pandas as pd 
-    logger.info("custom_taxo starts")
-    def convert(text,remove_taxo):  
-        """
-        Uses regex given in remove_taxo to find and return all matches 
-        """
-        match = re.findall(remove_taxo,text)
-        if match:                 
-            new_row = {'Match':match}
-            return(new_row)
-        
-    #if remove_taxo is regex call convert function to get all matches as a list
-    if type(remove_taxo) == str: 
-        # logger.info("User input the regex:",remove_taxo)
-        logger.info("User input the regex:"+ remove_taxo)
-        cv_list = []
-        for i in range(len(df.columns)):
-            for text in df.iloc[:,i]:
-                cv = convert(text,remove_taxo)
-                if cv:
-                    cv_list.append(cv)
-        #             print(cv_list)
 
-        cv_df = pd.DataFrame(cv_list)
-        remove_taxo = list(cv_df["Match"].apply(pd.Series).stack().unique())
-        logger.info("Remove_taxo_list: %s",remove_taxo)
-        
-    def taxo(text,remove_taxo,include_taxo): 
-        if remove_taxo != None and include_taxo != None: #user wants to remove taxonomies but wants the same taxonomy to remain in certain phrases (i.e remove "test" but remain "test" in "test cyccle")
-
-            for w in remove_taxo:
-            #row without any item from include_taxo -> replace all remove_taxo items with empty string
-                if all(phrase not in text for phrase in include_taxo): 
-                    pattern = r'\b'+w+r'\b'
-                    text = re.sub(pattern,' ', text) 
-                #row with any item from include_taxo -> only replace remove_taxo item that is not in include_taxo
-                else: 
-                    if all(w not in phrase for phrase in include_taxo):
-                        pattern = r'\b'+w+r'\b'
-                        text = re.sub(pattern,' ', text) 
-                        
-        if remove_taxo != None and include_taxo == None: #user wants to remove taxonomies only:
-            for w in remove_taxo: #remove_taxo in list of words
-                pattern = r'\b'+w+r'\b'
-                text = re.sub(pattern,' ', text)
-                 
-        return text 
-    
-    
-    df = df.applymap(lambda text: taxo(text,remove_taxo,include_taxo))     
-    df = df.add_suffix('_taxo')
-     
-    if remove_taxo != None and include_taxo != None:
-        logger.info("User wants to remove taxonomies but wants the same taxonomy to remain in certain phrases")
-        logger.info("Taxonomies removed: %s",remove_taxo)
-        logger.info("Taxonomies remain in phrases: %s",include_taxo) 
-    if remove_taxo != None and include_taxo == None: 
-        logger.info("user wants to remove taxonomies only")
-        logger.info("Taxonomies removed: %s",remove_taxo)
-        
-    logger.info("custom_taxo ends")
-           
-    return df    
-
-def custom_keeptaxo(df,keep_taxo):
-    """
-    User provides taxonomy to be kept in the text, the rest of the taxonomy will be omitted. User can choose to do one 
-    or multi stage filtering on the taxonomy
-    
-    df[DataFrame]: input dataframe
-    keep_taxo[regex/list of regex]: use regex/list of regex to filter the taxonomy to keep
-        regex : only one regex in keep_taxo to filter the taxonomy; i.e "[\w+\.]+\w+@intel.com"
-        list of regex: use list of regex to filter the taxonomy for multi stage filter 
-        i.e. ["[\w+\.]+\w+@intel.com","@intel.com","@intel","intel"]
-        
-    """        
-    import re
-    import pandas as pd 
-    logger.info("custom_keeptaxo starts")
-          
-    logger.info("User input the regex:" + str(keep_taxo))
-    if type(keep_taxo) == str:
-        logger.info("Single stage filtering of taxonomy selected")
-    else:
-        logger.info("Multi stage filtering of taxonomy selected")
-        
-    
-    def taxo_tokeep(text,keep_taxo):
-        """
-        Convert the taxo in keep_taxo to string and return the string  
-        """
-        #keep_taxo given as regex, get the list of words to keep in text according to regex
-        if type(keep_taxo) == str:             
-            keep_taxo = re.findall(keep_taxo,text)
-            text = " ".join(str(word) for word in keep_taxo) # convert list to string    
-        else:
-            #loop through list of regex for multi stage filtering on the text 
-            match_list = []    
-            keep_taxo_list = re.findall(keep_taxo[0],text) #for first regex, get all the matches in a list
-#             logger.info("Matches for first regex:", keep_taxo_list)
-            #for second regex onwards, check each term in keep_taxo_list whether it matches the second regex    
-            for tax in keep_taxo[1:]: 
-                for i in keep_taxo_list:            
-                    match = re.match(tax,i) #use match instead of findall which does not work with negation regex
-                    if match:                         
-                        match_list.append(match[0])
-                
-                text = " ".join(str(word) for word in match_list) # convert list to string  
-                                
-        return text    
-        
-    df = df.applymap(lambda text: taxo_tokeep(text,keep_taxo)) 
-    df = df.add_suffix('_keeptaxo')
-    
-    logger.info("Get the taxonomies maintained in the texts")
-    df_list =[]
-    for col in df:        
-        df_list.extend(list(df[col]))
-    
-    while("" in df_list) :
-        df_list.remove("")
-        
-    logger.info("The taxonomies maintained in the texts: %s",list(set(df_list)))    
-    logger.info("custom_keeptaxo ends")
-           
-    return df    
 
 def stem_words(df,stemmer_type):
     """
