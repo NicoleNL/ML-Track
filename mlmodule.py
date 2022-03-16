@@ -450,11 +450,13 @@ def deep_lng(df,outpath,target,test_size,ngram_range,fe_type,hidden_layer_sizes=
     # cf_matrix.to_csv(outpath+"Confusion_Matrix_DL.csv",index=False)
     cf_matrix.to_csv(outpath+"Confusion_Matrix_DL.csv")
     logger.info("Confusion matrix saved in %s as Confusion_Matrix_DL.csv",outpath)
+    
+    
 #similarity metrics
 
 #Cosine Similarity 
 
-def cosinesimilarity(column,outpath,threshold=None,total_rows = None,base_row=None,ngram_range=None,fe_type=None,ascending=None):
+def cosinesimilarity(column,identifier,outpath,threshold=None,total_rows = None,base_id=None,ngram_range=None,fe_type=None,ascending=None):
     """
     Compute the cosine similarity between rows of texts. User can 
     a) fix number of rows for comparison, each row will be taken as base and compared with the rest
@@ -465,14 +467,15 @@ def cosinesimilarity(column,outpath,threshold=None,total_rows = None,base_row=No
     params:    
     column[series/DataFrame]: column(s) of text for row wise similarity comparison
                         - series: only one column is selected (e.g. df["title_clean"])
-                        - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]])  
+                        - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]])
+    identifier[series]: column "id" as unique identifier
     outpath[string]: path to write output for user
     threshold[None/float]: cut off value for the cosine similarity, only texts with values above or equal to threshold
                            will be printed
                         - None: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[None/int]: Number of rows for comparison, choose None for option b 
-    base_row[None/int]: Row fixed as base, choose None for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a
     ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
                                        -[DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
@@ -501,18 +504,19 @@ def cosinesimilarity(column,outpath,threshold=None,total_rows = None,base_row=No
         
     #fix number of rows for comparison, each row will be taken as base and compared with the rest   
     if total_rows !=None: 
-        logger.info("Fix number of rows for comparison, each row will be taken as base and compared with the rest")
+        logger.info("Fix first %s rows for comparison, each row will be taken as base and compared with the rest",total_rows)
         results_append = []
         for base in range(total_rows):            
             #Create empty df
-            column_names = ["Base Index","Index", "Similarity Score", "Text"]
+            # column_names = ["Base Index","Index","Base ID","ID","Similarity Score", "Text"]
+            column_names = ["Base ID","ID","Similarity Score","Base Text", "Text"]
             results = pd.DataFrame(columns = column_names)
             
             #compare base with other index
             for i in range(total_rows): 
                 
                 if similarity_matrix.iloc[base,i] >= threshold:                     
-                    new_row = {'Base Index':base,'Index':i,'Similarity Score':round(similarity_matrix.iloc[base,i],4), 'Text':column.iloc[i]}
+                    new_row = {'Base ID': identifier.iloc[base],'ID': identifier.iloc[i],'Similarity Score':round(similarity_matrix.iloc[base,i],4), 'Base Text':column.iloc[base],'Text':column.iloc[i]}
                     #append row to the dataframe
                     results = results.append(new_row, ignore_index=True)
                 
@@ -523,34 +527,39 @@ def cosinesimilarity(column,outpath,threshold=None,total_rows = None,base_row=No
             results_append.append(results)
         results_append = pd.concat(results_append)
                  
-        results_append.to_csv(outpath+"Cosine_Similarity.csv",index=False)
+        results_append.to_excel(outpath+"Cosine_Similarity.xlsx",index=False)
     
     #fix base_row index for comparison with all indexes        
-    if base_row !=None: 
-        logger.info ("Fix one row as base, comparison will be done with all the other rows")          
+    if base_id !=None: 
+        logger.info ("Fix row with ID %s as base, comparison will be done with all the other rows",base_id)  
+        
+        #base_row is the index corresponding to the base ID
+        base_row = pd.Index(identifier).get_loc(str(base_id))
+          
         #Create empty df
-        column_names = ["Base Index","Index", "Similarity Score", "Text"]
+        column_names = ["Base ID" ,"ID", "Similarity Score", "Base Text", "Text"]
         results = pd.DataFrame(columns = column_names)
         
         #compare base_row with other index
         for i in range(len(column)): 
             #print if comparison shows that silarity metric is more than threshold
             if similarity_matrix.iloc[base_row,i] >= threshold: 
-                new_row = {'Base Index':base_row,'Index':i, 'Similarity Score':round(similarity_matrix.iloc[base_row,i],4), 'Text':column.iloc[i]}
+                new_row = {'Base ID':identifier.iloc[base_row],'ID':identifier.iloc[i], 'Similarity Score':round(similarity_matrix.iloc[base_row,i],4), 'Base Text':column.iloc[base_row],'Text':column.iloc[i]}
                 #append row to the dataframe
                 results = results.append(new_row, ignore_index=True)
                 if ascending != None:            
                     results = results.sort_values(by ='Similarity Score', axis = 0,ascending=ascending)  
-        #display(results)
-           
+                   
         
-        results.to_csv(outpath+"Cosine_Similarity.csv",index=False) 
-    logger.info("Cosine similarity results saved in %s as Cosine_Similarity.csv",outpath)
-    logger.info("cosinesimilarity ends") 
+        results.to_excel(outpath+"Cosine_Similarity.xlsx",index=False) 
+    logger.info("Cosine similarity results saved in %s as Cosine_Similarity.xlsx",outpath)
+    logger.info("cosinesimilarity ends")                    
+        
+
 
 #Jaccard Similarity 
 
-def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=None,ascending=None):
+def jaccardsimilarity(column,identifier,outpath,threshold=None,total_rows = None,base_id=None,ascending=None):
     """
     Compute the jaccard similarity between texts. User can 
     a) fix number of rows for comparison, each row will be taken as base and compared with the rest
@@ -562,13 +571,14 @@ def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=N
     column[series/DataFrame]: column(s) of text for row wise similarity comparison
                         - series: only one column is selected (e.g. df["title_clean"])
                         - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]]) 
+    identifier[series]: column "id" as unique identifier
     outpath[string]: path to write output for user
     threshold[None/float]: cut off value for the jaccard similarity, only texts with values above or equal to threshold
                            will be printed
                         - None: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[None/int]: Number of rows for comparison, choose None for option b 
-    base_row[None/int]: Row fixed as base, choose None for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a
     ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)  
@@ -584,48 +594,53 @@ def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=N
         return float(len(c)) / (len(a) + len(b) - len(c))
     
     #concat the columns into one string if there is more than one column 
-    if type(column) == pd.DataFrame: 
-        column = pd.DataFrame(column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1),columns = ["MergedCol"])
-        column = column.replace(' +','', regex=True) #remove multiple whitespaces
-        column = column[(column['MergedCol']!= "")] #remove empty string
-        column= column['MergedCol'] #convert column from df to series
-       
+    if type(column) == pd.DataFrame:  
+        column = column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1) 
+    # if type(column) == pd.DataFrame: 
+    #     column = pd.DataFrame(column.apply(lambda row: ' '.join(row.values.astype(str)), axis=1),columns = ["MergedCol"])
+    #     column = column.replace(' +','', regex=True) #remove multiple whitespaces
+    #     # column = column[(column['MergedCol']!= "")] #remove empty string
+    #     column= column['MergedCol'] #convert column from df to series        
+        
     #threshold
     if threshold == None:
         threshold = 0.5
         
-    #fix number of rows for dcomparison, each row will be taken as base and compared with the rest
+    #fix number of rows for comparison, each row will be taken as base and compared with the rest
     if total_rows !=None: 
-        logger.info("Fix number of rows for comparison, each row will be taken as base and compared with the rest")
+        logger.info("Fix first %s rows for comparison, each row will be taken as base and compared with the rest",total_rows)
         results_append = []
         for base in range(total_rows):
             
             #Create empty df
-            column_names = ["Base Index","Index", "Similarity Score", "Text"]
+            column_names = ["Base ID","ID","Similarity Score", "Base Text","Text"]
             results = pd.DataFrame(columns = column_names)                   
             
             #compare base with other index
             for i in range(total_rows): 
                 jac_score =  round(get_jaccard_sim(column.iloc[base],column.iloc[i]),4)                
                 if jac_score >= threshold: 
-                    new_row = {"Base Index":base,'Index':i, 'Similarity Score':jac_score, 'Text':column.iloc[i]}
+                    new_row = {'Base ID': identifier.iloc[base],'ID': identifier.iloc[i], 'Similarity Score':jac_score, 'Base Text':column.iloc[base],'Text':column.iloc[i]}
                     #append row to the dataframe
                     results = results.append(new_row, ignore_index=True)
                 
                 if ascending != None:            
-                    results = results.sort_values(by ='Similarity Score', axis = 0,ascending=ascending)  
-                    
-            #display(results)
+                    results = results.sort_values(by ='Similarity Score', axis = 0,ascending=ascending)                     
+            
             results_append.append(results)
         results_append = pd.concat(results_append)
         #display(results_append)         
-        results_append.to_csv(outpath+"Jaccard_Similarity.csv",index=False)
+        results_append.to_excel(outpath+"Jaccard_Similarity.xlsx",index=False)
         
-    if base_row != None: #fix base_row index for comparison with all indexes
+    if base_id != None: #fix base_row index for comparison with all indexes
        
-        logger.info ("Fix one row as base, comparison will be done with all the other rows") 
+        logger.info ("Fix row with ID %s as base, comparison will be done with all the other rows",base_id)  
+        
+        #base_row is the index corresponding to the base ID
+        base_row = pd.Index(identifier).get_loc(str(base_id))  
+        
         #Create empty df
-        column_names = ["Base Index","Index", "Similarity Score", "Text"]
+        column_names = ["Base ID" ,"ID", "Similarity Score", "Base Text", "Text"]
         results = pd.DataFrame(columns = column_names)                   
         
         #compare base_row with other index    
@@ -633,7 +648,7 @@ def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=N
             jac_score = round(get_jaccard_sim(column.iloc[base_row],column.iloc[i]),4)
             #print if comparison shows that silarity metric is more than threshold
             if jac_score >= threshold: 
-                new_row = {"Base Index":base_row,'Index':i, 'Similarity Score':jac_score, 'Text':column.iloc[i]}
+                new_row = {'Base ID':identifier.iloc[base_row],'ID':identifier.iloc[i],'Similarity Score':jac_score, 'Base Text':column.iloc[base_row],'Text':column.iloc[i]}
                 #append row to the dataframe
                 results = results.append(new_row, ignore_index=True)
             if ascending != None:            
@@ -641,7 +656,7 @@ def jaccardsimilarity(column,outpath,threshold=None,total_rows = None,base_row=N
         #display(results)
     
     
-        results.to_csv(outpath+"Jaccard_Similarity.csv",index=False) 
-    logger.info("Jaccard similarity results saved in %s as Jaccard_Similarity.csv",outpath)
+        results.to_excel(outpath+"Jaccard_Similarity.xlsx",index=False) 
+    logger.info("Jaccard similarity results saved in %s as Jaccard_Similarity.xlsx",outpath)
     logger.info("jaccardsimilarity ends")
 

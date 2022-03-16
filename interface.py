@@ -269,15 +269,15 @@ def main(projname,config_file,path_config):
     cs= data["SimilarityMetrics"]["cosinesimilarity"]
     cosinesim = cs["enable"]
     if cosinesim:
-        threshold,total_rows,base_row,ngram_range,fe_type,ascending= cs["threshold"],cs["total_rows"],cs["base_row"],cs["ngram_range"],cs["fe_type"],cs["ascending"]        
-        cosinesimilarity(column=df,outpath=outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ngram_range=ngram_range,fe_type=fe_type,ascending=ascending)
+        threshold,total_rows,base_id,ngram_range,fe_type,ascending= cs["threshold"],cs["total_rows"],cs["base_id"],cs["ngram_range"],cs["fe_type"],cs["ascending"]        
+        cosinesimilarity(column=df,identifier=df_all["id"],outpath=outpath,threshold=threshold,total_rows=total_rows,base_id=base_id,ngram_range=ngram_range,fe_type=fe_type,ascending=ascending)
 
     #Jaccard Similarity
     js= data["SimilarityMetrics"]["jaccardsimilarity"]
     jaccardsim = js["enable"]
     if jaccardsim:
-        threshold,total_rows,base_row,ascending= js["threshold"],js["total_rows"],js["base_row"],js["ascending"]
-        jaccardsimilarity(column=df,outpath=outpath,threshold=threshold,total_rows=total_rows,base_row=base_row,ascending=ascending)
+        threshold,total_rows,base_id,ascending= js["threshold"],js["total_rows"],js["base_id"],js["ascending"]
+        jaccardsimilarity(column=df,identifier=df_all["id"],outpath=outpath,threshold=threshold,total_rows=total_rows,base_id=base_id,ascending=ascending)
 
     #####-----Supervised Learning----####
              

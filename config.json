@@ -26,13 +26,13 @@
                         "column": null
                 },
                 "word_contractions": {
-                        "enable": false
+                        "enable": true
                 },
                 "lowercase": {
-                        "enable": false
+                        "enable": true
                 },
                 "remove_htmltag_url": {
-                        "enable": false
+                        "enable": true
                 },
 		"custom_remtaxo": {
                         "enable": false,
@@ -40,37 +40,37 @@
                         "include_taxo": null
                 },
 		"custom_keeptaxo": {
-                        "enable": true,
+                        "enable": false,
                         "keep_taxo": [
                                 "((?:[a-z]\\w+\\.){2,}[a-z]\\w+)(?=\\s)",
                                 "(?!.*(gz|bz2|intel\\.com)$).*"
                         ]                               
 		},
                 "remove_irrchar_punc": {
-                        "enable": false,
+                        "enable": true,
                         "char": null
                 },
                 "remove_num": {
-                        "enable": false
+                        "enable": true
                 },
                 "remove_multwhitespace": {
-                        "enable": false
+                        "enable": true
                 },
                 "remove_stopwords": {
-                        "enable": false,
+                        "enable": true,
                         "extra_sw": null,
                         "remove_sw": null
                 },
                 "remove_freqwords": {
-                        "enable": false,
+                        "enable": true,
                         "n": 10
                 },
                 "remove_rarewords": {
-                        "enable": false,
+                        "enable": true,
                         "n": 10
                 },                
                 "stem_words": {
-                        "enable": false,
+                        "enable": true,
                         "stemmer_type": null
                 },
                 "lemmatize_words": {
@@ -80,7 +80,7 @@
         },
         "UnsupervisedLearning": {                         
                 "kmeans_clustering": {
-                        "enable": true,
+                        "enable": false,
                         "top_n_terms": 10,
                         "ngram_range": null,
                         "fe_type": null,
@@ -130,19 +130,19 @@
         },
         "SimilarityMetrics": {
                 "cosinesimilarity": {
-                        "enable": false,
+                        "enable": true,
                         "threshold": 0,
-                        "total_rows": 10,
-                        "base_row": null,
+                        "total_rows": null,
+                        "base_id": "1306700467",
                         "ngram_range": null,
                         "fe_type": null,
                         "ascending": null
                 },
                 "jaccardsimilarity": {
-                        "enable": false,
+                        "enable": true,
                         "threshold": 0,
-                        "total_rows": 10,
-                        "base_row": null,
+                        "total_rows": null,
+                        "base_id": "1306700467",
                         "ascending": null
                 }
         }
