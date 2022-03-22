@@ -10,7 +10,7 @@ from datapreprocessing import feature_extraction
 import pandas as pd
 import joblib
 import numpy as np
-import logging
+import logging,sys
 import warnings
 logger = logging.getLogger("MLTrack")
 
@@ -534,8 +534,12 @@ def cosinesimilarity(column,identifier,outpath,threshold=None,total_rows = None,
         logger.info ("Fix row with ID %s as base, comparison will be done with all the other rows",base_id)  
         
         #base_row is the index corresponding to the base ID
-        base_row = pd.Index(identifier).get_loc(str(base_id))
-          
+        try:
+            base_row = pd.Index(identifier).get_loc(str(base_id))
+        except:
+            logger.error("Base id %s does not exist",base_id)
+            sys.exit("Base id does not exist. Please input a new id")
+            
         #Create empty df
         column_names = ["Base ID" ,"ID", "Similarity Score", "Base Text", "Text"]
         results = pd.DataFrame(columns = column_names)
@@ -637,7 +641,11 @@ def jaccardsimilarity(column,identifier,outpath,threshold=None,total_rows = None
         logger.info ("Fix row with ID %s as base, comparison will be done with all the other rows",base_id)  
         
         #base_row is the index corresponding to the base ID
-        base_row = pd.Index(identifier).get_loc(str(base_id))  
+        try:
+            base_row = pd.Index(identifier).get_loc(str(base_id)) 
+        except:
+            logger.error("Base id %s does not exist",base_id)
+            sys.exit("Base id does not exist. Please input a new id")
         
         #Create empty df
         column_names = ["Base ID" ,"ID", "Similarity Score", "Base Text", "Text"]
