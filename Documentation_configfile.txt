@@ -290,7 +290,7 @@ SimilarityMetrics (for data without target), text will be compared with other ro
                         - null: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[null/int]: Number of rows for comparison, choose null for option b 
-    base_row[null/int]: Row fixed as base, choose null for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a 
     ngram_range [tuple(min_n, max_n)/null]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
                                        - null is default where ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
@@ -313,7 +313,7 @@ SimilarityMetrics (for data without target), text will be compared with other ro
                         - null: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[null/int]: Number of rows for comparison, choose null for option b 
-    base_row[null/int]: Row fixed as base, choose null for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a 
     ascending [true/false/null]: - [default] null (words arranged in alphabetical order)
                                  - true(words arranged in ascending order of sum), 
                                  - false(words arranged in descending order of sum) 

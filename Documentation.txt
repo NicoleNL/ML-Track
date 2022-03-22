@@ -250,7 +250,7 @@ i) supervised_lng
    Returns .joblib model, overall accuracy, classification report, confusion matrix                                                                                       
    params:
    df[DataFrame]: input dataframe
-   user_outpath[string]: path to write output for user
+   outpath[string]: path to write output for user
    target[string]: label of data
    test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. 
                           If int, represents the absolute number of test samples.
@@ -258,7 +258,7 @@ i) supervised_lng
                                        -[DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
+   fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method    
    model_type[None/string]: Choose ML algorithm 
                             - None (Default algorithm is Random Forest)
                             - 'NB'(To choose Naive Bayes as ML algorithm), 
@@ -272,7 +272,7 @@ ii) deep_lng
     Returns .joblib model, overall accuracy, classification report, confusion matrix
     params:
     df[DataFrame]: input dataframe
-    user_outpath[string]: path to write output for user
+    outpath[string]: path to write output for user
     target[string]: label of data
     test_size[float/int]: If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. 
                           If int, represents the absolute number of test samples.
@@ -298,44 +298,49 @@ i) cosinesimilarity
     a) fix number of rows for comparison, each row will be taken as base and compared with the rest
     b) fix one row as base, comparison will be done with all the other rows
     Returns:
-    Dataframe with base index/row, index/row, similarity score, text 
+    Dataframe with base index/row, index/row, similarity score, text
+    
     params:    
     column[series/DataFrame]: column(s) of text for row wise similarity comparison
                         - series: only one column is selected (e.g. df["title_clean"])
-                        - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]])  
-    user_outpath[string]: path to write output for user
+                        - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]])
+    identifier[series]: column "id" as unique identifier
+    outpath[string]: path to write output for user
     threshold[None/float]: cut off value for the cosine similarity, only texts with values above or equal to threshold
                            will be printed
                         - None: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[None/int]: Number of rows for comparison, choose None for option b 
-    base_row[None/int]: Row fixed as base, choose None for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a
     ngram_range [tuple(min_n, max_n)]: The lower and upper boundary of the range of n-values for different n-grams to be extracted
                                        -[DEFAULT] ngram_range of (1, 1) means only unigrams, 
                                        - ngram_range of (1, 2) means unigrams and bigrams, 
                                        - ngram_range of (2, 2) means only bigram
-    fe_type[string/None]: Feature extraction type: Choose "bagofwords" for bow or None for default tfidf method      
+    fe_type[None/string]: Feature extraction type: Choose "bagofwords" or None for tfidf[DEFAULT]
     ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
-                                 - False(words arranged in descending order of sum)
-  
+                                 - False(words arranged in descending order of sum)  
+   
 ii) jaccard_similarity
     Compute the jaccard similarity between texts. User can 
     a) fix number of rows for comparison, each row will be taken as base and compared with the rest
     b) fix one row as base, comparison will be done with all the other rows
     Returns:
     Dataframe with base index/row, index/row, similarity score, text
+    
     params:
     column[series/DataFrame]: column(s) of text for row wise similarity comparison
                         - series: only one column is selected (e.g. df["title_clean"])
                         - DataFrame: more than one column is selected(e.g. df[["title_clean","desc_clean"]]) 
-    user_outpath[string]: path to write output for user
+    identifier[series]: column "id" as unique identifier
+    outpath[string]: path to write output for user
     threshold[None/float]: cut off value for the jaccard similarity, only texts with values above or equal to threshold
                            will be printed
                         - None: Default threhold is 0.5
                         - float: any value between 0 and 1 
     total_rows[None/int]: Number of rows for comparison, choose None for option b 
-    base_row[None/int]: Row fixed as base, choose None for option a 
+    base_id[None/string]: ID (eg."1306700467") fixed as base, choose None for option a
     ascending [True/False/None]: - [default] None (words arranged in alphabetical order)
                                  - True(words arranged in ascending order of sum), 
                                  - False(words arranged in descending order of sum)  
+    
