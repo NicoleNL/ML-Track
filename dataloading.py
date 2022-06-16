@@ -37,7 +37,7 @@ def load_json_lst(path:str) -> list:
         path (str): path to load json files
 
     Returns:
-        list: _description_
+        list: list of dataframes from json
     """
     return [pd.read_json(f) for f in get_json_filenames(path)]
 
