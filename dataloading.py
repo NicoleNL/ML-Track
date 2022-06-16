@@ -1,10 +1,57 @@
 from datetime import datetime,timedelta
+from jmespath import search
 import pandas as pd
 import glob, os, json
 import re
 import logging
 logger = logging.getLogger("MLTrack")
 
+
+def get_filenames(path:str) -> list:
+    """Get all file names given the path(folder)
+
+    Args:
+        path (str): path(folder) to obtain files
+
+    Returns:
+        list: list of filenames
+    """
+    return [f"{path}/{f}" for f in os.listdir("data") if os.path.isfile(os.path.join("data", f))]
+    
+def get_json_filenames(path:str) -> list:
+    """Get json only files given the path
+
+    Args:
+        path (str): path to obtain json files
+
+    Returns:
+        list: list of json files
+    """
+    pattern = r".*\.(json)$"
+    return [f for f in get_filenames(path) if re.search(pattern, f)]
+
+def load_json_lst(path:str) -> list:
+    """Load list of json files into Dataframes
+
+    Args:
+        path (str): path to load json files
+
+    Returns:
+        list: _description_
+    """
+    return [pd.read_json(f) for f in get_json_filenames(path)]
+
+def load_combine_json(path:str) -> pd.DataFrame:
+    """Load and combine list of json DFs into a single DF
+
+    Args:
+        path (str): path to load and combine DFs
+
+    Returns:
+        pd.DataFrame: Combined DFs from path
+    """
+    return pd.concat(load_json_lst(path))
+            
 #data loading
 def data_loading(path,start_date=None,stop_date=None):
     '''
