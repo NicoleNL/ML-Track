@@ -1,15 +1,14 @@
 import pandas as pd
 from src.IVEDataLoaderBase import IVEDataLoaderBase
 
-TARGET = "component_affected"
-LABEL = "label"
-
 class IVEDataLoaderV1(IVEDataLoaderBase):
 
-    def __init__(self, raw_ive_df:pd.DataFrame) -> None: 
+    def __init__(self, raw_ive_df:pd.DataFrame, target="component_affected", label="label") -> None: 
         """Version 1: Load training and test data"""
         super().__init__(raw_ive_df)
         self.initialize_data()
+        self.target = target
+        self.label = label
 
     def generate_train_test(self, test_size=10, label_dct=None) -> None:
         """Run train and test data generations
@@ -31,8 +30,8 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
     def _create_labels(self) -> None:
         """Create text labels of main categories
         """
-        raw_lst = self.all_df[TARGET].tolist()
-        self.all_df[LABEL] = [x.split(",")[0].split(".")[0] for x in raw_lst]
+        raw_lst = self.all_df[self.target].tolist()
+        self.all_df[self.label] = [x.split(",")[0].split(".")[0] for x in raw_lst]
         self.set_labels_remove_lst()
         self.filter_labels()
         self._labels_to_numeric()
@@ -40,10 +39,10 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
     def _labels_to_numeric(self):
         """Converts labels to numetic form based on existing dictionary
         """
-        label_lst = self.all_df[LABEL].tolist()
+        label_lst = self.all_df[self.label].tolist()
         label_lst = [self.label_dct[x] for x in label_lst]
 
-        self.all_df[LABEL] = label_lst
+        self.all_df[self.label] = label_lst
 
     def set_labels_remove_lst(self, lst=['doc', 'soc']):
         """Set list of labels where the sample size is too small
@@ -63,7 +62,7 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
     def filter_labels(self):
         """Remove labels with sample size that is too small
         """
-        self.all_df = self.all_df[~self.all_df[LABEL].isin(self.remove_lst)]
+        self.all_df = self.all_df[~self.all_df[self.label].isin(self.remove_lst)]
 
     def set_test_size(self, size=10) -> None:
         """Set test size for each label/category
@@ -78,7 +77,7 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
         """
         train_lst = []
         eval_lst = []
-        grouped = self.all_df.groupby(LABEL)
+        grouped = self.all_df.groupby(self.label)
 
         for _, label_df in grouped:
             train_lst.append(label_df[self.test_size:])
