@@ -18,15 +18,10 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
             test_size (int, optional): _description_. Defaults to 10.
             label_dct (_type_, optional): _description_. Defaults to None.
         """       
-        #create text label of main category
-        self._create_labels()
-        self.set_labels_remove_lst()
-        self.filter_labels()
-
-        #convert text label to numetic
+        #create text label of main category and convert to numeric
         self.set_conversion_dict(label_dct)
-        self._labels_to_numeric()
-
+        self._create_labels()
+        
         #split data into training and test
         self.set_test_size(test_size)
         self._train_test_split()
@@ -38,6 +33,9 @@ class IVEDataLoaderV1(IVEDataLoaderBase):
         """
         raw_lst = self.all_df[TARGET].tolist()
         self.all_df[LABEL] = [x.split(",")[0].split(".")[0] for x in raw_lst]
+        self.set_labels_remove_lst()
+        self.filter_labels()
+        self._labels_to_numeric()
 
     def _labels_to_numeric(self):
         """Converts labels to numetic form based on existing dictionary
