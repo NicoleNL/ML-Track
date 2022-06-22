@@ -1,0 +1,4 @@
+torch==1.11.0
+wandb==0.12.18
+pandas==1.4.2
+simpletransformers==0.63.7
